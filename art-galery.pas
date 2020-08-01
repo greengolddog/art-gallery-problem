@@ -2,6 +2,8 @@
 
 type figure = array [1..2, 1..100000] of real;//фигура
 
+type booleans = array [1.. 100000] of boolean;
+
 var a: array[1..67]of Color;//цвета для охранников
 
 var
@@ -113,6 +115,18 @@ begin
     end;
 end;
 
+function index(fig : figure; x, y : real; el : int64) : int64;
+begin
+    for var i := 1 to el do
+    begin
+        if (fig[1][i] = x) and (fig[2][i] = y) then
+        begin
+            Result := i;
+            exit;
+        end;
+    end;
+end;
+
 //удаляем дубликаты
 function delete_doubles(fig : figure; el : int64) : int64;
 begin 
@@ -154,10 +168,23 @@ begin
     place_insert[2][num_insert + 1] := prom;
 end;
 
+
+procedure insert_boolean(num_insert, len_place : int64; var place_insert : booleans);//вставляет len_place-ный элемент массива place_insert в позицию num_insert
+var prom : boolean;
+begin 
+    prom := place_insert[num_insert];
+    place_insert[num_insert] := place_insert[len_place];
+    for var pointup := num_insert + 1 to len_place - 1 do
+    begin
+        place_insert[num_insert + len_place - pointup + 1] := place_insert[num_insert + len_place - pointup];
+    end;
+    place_insert[num_insert + 1] := prom;
+end;
+
 function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2 : int64) : boolean;//объединяет фигуры и кладёт объединение в union (если фигуры не пересекаются выдает false)
 var fig1, fig2, add, place_add : figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
 //var : array [1.. 100000] of int64;
-var intersections{, delete_old} : array [1..2, 1.. 100000] of boolean;//является ли точка фигуры пересечением
+var intersections1, intersections2{, delete_old} : booleans;//является ли точка фигуры пересечением
 var num_points, num_add, num_vert1, num_vert2 : int64;//num_points : длина массива intersections, num_add : длина массива add
 begin 
     fig1 := figure1;//копируем первую фигуру
@@ -176,6 +203,14 @@ begin
         points[2][i + num_vert1] := fig2[2][i];
     end;}
     //начинаем искать коорднаты пересечений
+    for var i :=  1 to num_vert1 do
+    begin
+        intersections1[i] := false
+    end;
+    for var i :=  1 to num_vert2 do
+    begin
+        intersections2[i] := false
+    end;
     for var i1 := 1 to num_vert1 do//идём по первой фигуре
     begin
         for var i2 := 1 to num_vert2 do//идём по второй фигуре
@@ -252,16 +287,75 @@ begin
             num_add := num_add - 1;
         end;
     end;
-    {for var i := 1 to num_add do
+    //вставляем пересечения в фигуры
+    for var i := 1 to num_add do
     begin
-        fig1[1][num_vert1 + 1] := add[1][i];
-        fig1[2][num_vert1 + 1] := add[2][i];
+        fig1[1][num_vert1 + 1] := add[1][i];//вначале поставим его на последнее место
         fig2[1][num_vert2 + 1] := add[1][i];
+        fig1[2][num_vert1 + 1] := add[2][i];
         fig2[2][num_vert2 + 1] := add[2][i];
-        num_vert1 := num_vert1 + 1;
+        intersections1[num_vert1 + 1] := true;//и скажем, что это пересечение
+        intersections2[num_vert2 + 1] := true;
+        num_vert1 := num_vert1 + 1;//увеличим кол-во вершин на 1
         num_vert2 := num_vert2 + 1;
-        insert(fig1)
-    end;}
+        insert(Round(place_add[1][i] + 1), num_vert1, fig1);//перенесём в нужное место координаты точки и соответствующий ей boolean
+        insert(Round(place_add[2][i] + 1), num_vert2, fig2);
+        insert_boolean(Round(place_add[1][i] + 1), num_vert1, intersections1);
+        insert_boolean(Round(place_add[2][i] + 1), num_vert2, intersections2);
+        //идём по добавлемым точкам, чтобы обратить последствия сдивга во время вставления
+        for var j := 1 to num_add do
+        begin
+            if (place_add[1][j] > place_add[1][i]) and (j > i) then//если точку надо втавить позже, и мы её ещё не вставили...
+                place_add[1][j] := place_add[1][j] + 1;
+            if (place_add[2][j] > place_add[2][i]) and (j > i) then//если точку надо втавить позже, и мы её ещё не вставили...
+                place_add[2][j] := place_add[2][j] + 1;
+        end;
+    end;
+    fig1[1][num_vert1 + 1] := fig1[1][1];//снова замыкаем фигуры
+    fig2[1][num_vert2 + 1] := fig2[1][1];
+    fig1[2][num_vert1 + 1] := fig1[2][1];
+    fig2[2][num_vert2 + 1] := fig2[2][1];
+    //сортируем пересечения внутри сторон 1-ой фигуры
+    for var i := 1 to num_vert1 do//идём по вершинам
+    begin
+        var num_between : int64;//кол-во пересечений между 2-мя вершинами
+        if not intersections1[i] then//если эта точка
+        begin 
+            for var plus := 1 to 3 do//идём вперёд от этой точки
+            begin
+                num_between := plus - 1;
+                if not intersections1[i + plus] then//если это пересечение...
+                    break;//...мы выходим из цикла
+            end;
+            //если между ними 2 точки и они стоят не в том порядке...
+            if (num_between = 2) and (points_dist(fig1[1][i + 1], fig1[2][i + 1], fig1[1][i], fig1[2][i]) > points_dist(fig1[1][i + 2], fig1[2][i + 2], fig1[1][i], fig1[2][i])) then
+            begin
+                Swap(fig1[1][i + 1], fig1[1][i + 2]);//...мы меняем их местами
+                Swap(fig1[2][i + 1], fig1[2][i + 2]);
+            end;
+        end;
+    end;
+    //тоже для 2-ой фигуры
+    for var i := 1 to num_vert2 do
+    begin
+        var num_between : int64;
+        if not intersections2[i] then
+        begin 
+            for var plus := 1 to 3 do
+            begin
+                num_between := plus - 1;
+                if not intersections2[i + plus] then
+                begin
+                    break;
+                end;
+            end;
+            if (num_between = 2) and (points_dist(fig2[1][i + 1], fig2[2][i + 1], fig2[1][i], fig2[2][i]) > points_dist(fig2[1][i + 2], fig2[2][i + 2], fig2[1][i], fig2[2][i])) then
+            begin
+                Swap(fig2[1][i + 1], fig2[1][i + 2]);
+                Swap(fig2[2][i + 1], fig2[2][i + 2]);
+            end;
+        end;
+    end;
     for var i := 1 to num_add do
     begin
         SetBrushColor(clBlue);
