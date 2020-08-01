@@ -1,1 +1,1 @@
-# art-gallery-problem 1
+# art-gallery-problem
