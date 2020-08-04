@@ -7,7 +7,7 @@ type
         animal_array = array [1..6] of aray;
 
 var
-        y_n, num_of_walls, areas,assssssss: int64;
+        y_n, num_of_walls, areas,zxzxzxzxzxz: int64;
 
 var
         i: array[1..2]of array[1..10000]of int64;
@@ -345,8 +345,8 @@ end;
 procedure MouseDown(x, y, mb: integer);
 begin
         //рисуем стены комнаты
-        assssssss+=1;
-        TextOut(0,0,assssssss);
+        zxzxzxzxzxz+=1;
+        TextOut(0,0,zxzxzxzxzxz);
         var counter: int64;
         for var u := 1 to num_of_walls - 3 do
         begin
