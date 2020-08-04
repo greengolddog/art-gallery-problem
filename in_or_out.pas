@@ -37,17 +37,47 @@ begin
         Result := true;
 end;
 
+
+function in_or_out(x_guard, y_guard, xxx, yyy: int64): boolean;
+begin
+        var counter: int64;
+        counter := 0;
+        //        Print(num_of_walls);
+        //        Line(0,0,x_guard,y_guard,clRed);
+        //        SetPenWidth(3);
+        for var lines := 1 to f - 2 do
+        begin
+                if get_line_intersection(gallery[1][lines], gallery[2][lines], gallery[1][lines + 1], gallery[2][lines + 1], x_guard, y_guard, xxx, yyy) then
+                begin
+                        counter := counter + 1;
+                end;
+                //                Line(k[1][lines],k[2][lines],k[1][lines + 1], k[2][lines + 1],clRed);
+                //                Print(counter,k[1][lines], k[2][lines], k[1][lines + 1], k[2][lines + 1]);
+        end;
+        if get_line_intersection(gallery[1][f- 1], gallery[2][f - 1], gallery[1][1], gallery[2][1], x_guard, y_guard, xxx, yyy) then
+        begin
+                counter := counter + 1;
+        end;
+        //        Print(counter);
+        if counter mod 2 = 0 then
+                result := false
+        else
+                result := true;
+end;
+
 function in_or_out_2(x_guard, y_guard: int64): boolean;
 begin
-        if(in_or_out(x_guard, y_guard, 0, 0) <> in_or_out(x_guard, y_guard < WindowWidth(), WindowHeight())) then
+        //Println()
+        if(in_or_out(x_guard, y_guard, 0, 0) <> in_or_out(x_guard, y_guard , WindowWidth(), WindowHeight())) then
         begin
+                //Print(1);
                 if(in_or_out(x_guard, y_guard, 0, WindowHeight()) <> in_or_out(x_guard, y_guard, WindowWidth(), 0)) then
                 begin
                         if(in_or_out(x_guard, y_guard, 0, WindowHeight()div 2) <> in_or_out(x_guard, y_guard, WindowWidth(), WindowHeight()div 2)) then
                         begin
                                 if(in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight()) <> in_or_out(x_guard, y_guard, WindowWidth()div 2, 0)) then
                                 begin
-                                        Result:= 1;
+                                        Result:= True;
                                 end
                                 else
                                 begin
@@ -68,33 +98,6 @@ begin
         begin
                 Result := in_or_out(x_guard, y_guard, 0, 0);
         end;
-end;
-
-function in_or_out(x_guard, y_guard, xxx, yyy: int64): boolean;
-begin
-        var counter: int64;
-        counter := 0;
-        //        Print(num_of_walls);
-        //        Line(0,0,x_guard,y_guard,clRed);
-        //        SetPenWidth(3);
-        for var lines := 1 to num_of_walls - 2 do
-        begin
-                if get_line_intersection(gallery[1][lines], gallery[2][lines], gallery[1][lines + 1], gallery[2][lines + 1], x_guard, y_guard, xxx, yyy) then
-                begin
-                        counter := counter + 1;
-                end;
-                //                Line(k[1][lines],k[2][lines],k[1][lines + 1], k[2][lines + 1],clRed);
-                //                Print(counter,k[1][lines], k[2][lines], k[1][lines + 1], k[2][lines + 1]);
-        end;
-        if get_line_intersection(gallery[1][num_of_walls - 1], gallery[2][num_of_walls - 1], gallery[1][1], gallery[2][1], x_guard, y_guard, xxx, yyy) then
-        begin
-                counter := counter + 1;
-        end;
-        //        Print(counter);
-        if counter mod 2 = 0 then
-                result := false
-        else
-                result := true;
 end;
 
 { ************************  заносим в x y пересечение двух прямых, на которых лежат отрезки. Если пересечения нет - NAN   *******************************************}
@@ -421,7 +424,7 @@ begin
         {**************************** начинаем вычислять зону видимости охранников *****************************}
         if (y_n = 2 + kol) then
         begin
-                    Print(in_or_out_2(Guards[1][0],Guards[2][0]));
+                    Print(in_or_out_2(Guards[1][1],Guards[2][1]));
 //                var intersections_local{точки пересечения со стенками у одного луча}, intersections_zero: figure;
 //                var intersections_global{точки пересечения со стенками у всех лучей всех охранников}, sort_intersections_global: array[1..1000]of figure;
 //                var number_local: int64;
