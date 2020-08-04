@@ -168,6 +168,67 @@ begin
     place_insert[2][num_insert + 1] := prom;
 end;
 
+function in_or_out(x_guard, y_guard, xxx, yyy, el : int64; fig : figure): boolean;
+begin
+        var counter: int64;
+        counter := 0;
+        //        Print(num_of_walls);
+        //        Line(0,0,x_guard,y_guard,clRed);
+        //        SetPenWidth(3);
+        for var lines := 1 to el - 1 do
+        begin
+                if get_line_intersection(fig[1][lines], fig[2][lines], fig[1][lines + 1], fig[2][lines + 1], x_guard, y_guard, xxx, yyy) then
+                begin
+                        counter := counter + 1;
+                end;
+                //                Line(k[1][lines],k[2][lines],k[1][lines + 1], k[2][lines + 1],clRed);
+                //                Print(counter,k[1][lines], k[2][lines], k[1][lines + 1], k[2][lines + 1]);
+        end;
+        if get_line_intersection(fig[1][el], fig[2][el], fig[1][1], fig[2][1], x_guard, y_guard, xxx, yyy) then
+        begin
+                counter := counter + 1;
+        end;
+        //        Print(counter);
+        if counter mod 2 = 0 then
+                result := false
+        else
+                result := true;
+end;
+
+function in_or_out2(x_guard, y_guard: int64): boolean;
+begin
+        //Println()
+        if(in_or_out(x_guard, y_guard, 0, 0) <> in_or_out(x_guard, y_guard , WindowWidth(), WindowHeight())) then
+        begin
+                //Print(1);
+                if(in_or_out(x_guard, y_guard, 0, WindowHeight()) <> in_or_out(x_guard, y_guard, WindowWidth(), 0)) then
+                begin
+                        if(in_or_out(x_guard, y_guard, 0, WindowHeight()div 2) <> in_or_out(x_guard, y_guard, WindowWidth(), WindowHeight()div 2)) then
+                        begin
+                                if(in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight()) <> in_or_out(x_guard, y_guard, WindowWidth()div 2, 0)) then
+                                begin
+                                        Result:= True;
+                                end
+                                else
+                                begin
+                                        Result := in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight());
+                                end;
+                        end
+                        else
+                        begin
+                                Result := in_or_out(x_guard, y_guard, 0, WindowHeight()div 2);
+                        end;
+                end
+                else
+                begin
+                        Result := in_or_out(x_guard, y_guard, 0, WindowHeight());
+                end;
+        end
+        else
+        begin
+                Result := in_or_out(x_guard, y_guard, 0, 0);
+        end;
+end;
 
 procedure insert_boolean(num_insert, len_place : int64; var place_insert : booleans);//вставляет len_place-ный элемент массива place_insert в позицию num_insert
 var prom : boolean;
@@ -181,11 +242,22 @@ begin
     place_insert[num_insert + 1] := prom;
 end;
 
-function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2 : int64) : boolean;//объединяет фигуры и кладёт объединение в union (если фигуры не пересекаются выдает false)
+function sement_in_figure(fig : figure; num_vert, point_index : int64; x, y : real) : boolean;
+begin
+    for var i := 1 to num_vert do
+    begin
+        if (get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1) and (not ((point_index = 1) and (i = num_vert)))) or (in_or_out2()) then
+        begin
+        end;
+    end;
+end;
+
+function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2 : int64) : boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
 var fig1, fig2, add, place_add : figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
 //var : array [1.. 100000] of int64;
 var intersections1, intersections2{, delete_old} : booleans;//является ли точка фигуры пересечением
-var num_points, num_add, num_vert1, num_vert2 : int64;//num_points : длина массива intersections, num_add : длина массива add
+var num_points, num_add, num_vert1, num_vert2, counter : int64;//num_points : длина массива intersections, num_add : длина массива add
+var in_fig1 : boolean;
 begin 
     fig1 := figure1;//копируем первую фигуру
     fig2 := figure2;//копируем вторую фигуру
