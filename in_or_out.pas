@@ -10,6 +10,39 @@ var
 var
         Gallery, Guards: array [1..2, 0..1000] of int64;
 
+ 
+function in_or_out_2(x_guard,y_guard):boolean;
+begin
+  
+end;
+
+function in_or_out(x_guard, y_guard: int64): boolean;
+begin
+        var counter: int64;
+        counter := 0;
+        //        Print(num_of_walls);
+        //        Line(0,0,x_guard,y_guard,clRed);
+        //        SetPenWidth(3);
+        for var lines := 1 to num_of_walls - 2 do
+        begin
+                if get_line_intersection(i[1][lines], i[2][lines], i[1][lines + 1], i[2][lines + 1], x_guard, y_guard, 0, 0) then
+                begin
+                        counter := counter + 1;
+                end;
+                //                Line(k[1][lines],k[2][lines],k[1][lines + 1], k[2][lines + 1],clRed);
+                //                Print(counter,k[1][lines], k[2][lines], k[1][lines + 1], k[2][lines + 1]);
+        end;
+        if get_line_intersection(i[1][num_of_walls - 1], i[2][num_of_walls - 1], i[1][1], i[2][1], x_guard, y_guard, 0, 0) then
+        begin
+                counter := counter + 1;
+        end;
+        //        Print(counter);
+        if counter mod 2 = 0 then
+                result := false
+        else
+                result := true;
+end;
+
 { ************************  заносим в x y пересечение двух прямых, на которых лежат отрезки. Если пересечения нет - NAN   *******************************************}
 
 function points_dist(x1, y1, x2, y2 : int64) : real;//расстояние между двумя точками
@@ -270,33 +303,6 @@ begin
     end;
     Print(num_add);
  end;
- 
-function in_or_out(x_guard, y_guard: int64): boolean;
-begin
-        var counter: int64;
-        counter := 0;
-        //        Print(num_of_walls);
-        //        Line(0,0,x_guard,y_guard,clRed);
-        //        SetPenWidth(3);
-        for var lines := 1 to num_of_walls - 2 do
-        begin
-                if get_line_intersection(i[1][lines], i[2][lines], i[1][lines + 1], i[2][lines + 1], x_guard, y_guard, 0, 0) then
-                begin
-                        counter := counter + 1;
-                end;
-                //                Line(k[1][lines],k[2][lines],k[1][lines + 1], k[2][lines + 1],clRed);
-                //                Print(counter,k[1][lines], k[2][lines], k[1][lines + 1], k[2][lines + 1]);
-        end;
-        if get_line_intersection(i[1][num_of_walls - 1], i[2][num_of_walls - 1], i[1][1], i[2][1], x_guard, y_guard, 0, 0) then
-        begin
-                counter := counter + 1;
-        end;
-        //        Print(counter);
-        if counter mod 2 = 0 then
-                result := false
-        else
-                result := true;
-end;
 
 { ************************  векторное пересечение   *******************************************} 
 function vector_multiplicator(vek1_x, vek1_y, vek2_x, vek2_y: int64): int64;
