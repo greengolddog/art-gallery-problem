@@ -503,10 +503,30 @@ begin
                                 number_local := 1;
                         end;
                 end;
-                for var i := 1 to 67 do
+                var i :int64;
+                var union :figure;
+                i := 1;
+                while(i<l)do
                 begin
-                    a[i] := clRandom;
+                  for var j := i+1 to l do
+                  begin
+                    if(Union_figures(sort_intersections_global[i],sort_intersections_global[j],union,sort_number_global[i],sort_number_global[j]))then
+                    begin
+                      sort_intersections_global[i]:= union;
+                      for var k := j to l do
+                      begin
+                        sort_intersections_global[k]:= sort_intersections_global[k+1];
+                      end;
+                      i-=1;
+                      break;
+                    end;
+                  end;
+                  i+=1;
                 end;
+//                for var i := 1 to 67 do
+//                begin
+//                    a[i] := clRandom;
+//                end;
                 //                for var i := 1 to l - 1 do // идем по охранникам
 //                begin
 //                        //                        SetBrushColor(a[i]);
