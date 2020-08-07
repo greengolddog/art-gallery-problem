@@ -1,8 +1,16 @@
 ﻿uses graphABC;
 
-type figure = array [1..2, 1..100000] of real;//фигура
+type
+        figure = array [1..2, 1..100000] of real;//фигура
 
-var a: array[1..67]of Color;//цвета для охранников
+type
+        global = array [1..1000] of figure;
+
+type
+        number = array [1..1000] of int64;
+
+var
+        a: array[1..67]of Color;//цвета для охранников
 
 var
         y_n, f, l, kol, s: int64;
@@ -12,9 +20,9 @@ var
 
 { ************************  заносим в x y пересечение двух прямых, на которых лежат отрезки. Если пересечения нет - NAN   *******************************************}
 
-function points_dist(x1, y1, x2, y2 : int64) : real;//расстояние между двумя точками
-begin 
-    result := Sqrt(Sqr(Abs(x1 - x2)) + Sqr(Abs(y1 - y2)));
+function points_dist(x1, y1, x2, y2: int64): real;//расстояние между двумя точками
+begin
+        result := Sqrt(Sqr(Abs(x1 - x2)) + Sqr(Abs(y1 - y2)));
 end;
 
 procedure intersection(x1, y1, x2, y2, x3, y3, x4, y4: real; var x, y: real);
@@ -46,7 +54,7 @@ end;
 
 {function have_in_Galery(x, y : int64) : boolean;
 begin 
-    
+
 end;}
 
 { ************************  проверяем, пересекаются ли отрезки   *******************************************}
@@ -75,201 +83,231 @@ begin
 end;
 
 //удаляет элемент del массива fig
-procedure delete2(var fig : figure; el, del : int64);
-begin 
-    for var i := del to el - 1 do
-    begin
-        fig[1][i] := fig[1][i + 1];
-        fig[2][i] := fig[2][i + 1];
-    end;
-    fig[1][el] := 0;
-    fig[2][el] := 0;
+procedure delete2(var fig: figure; el, del: int64);
+begin
+        for var i := del to el - 1 do
+        begin
+                fig[1][i] := fig[1][i + 1];
+                fig[2][i] := fig[2][i + 1];
+        end;
+        fig[1][el] := 0;
+        fig[2][el] := 0;
 end;
 
 //удаляет все заднные элементы fig
-function delete_bad(var fig : figure; el : int64) : int64;
-begin 
-    for var i := el downto 1 do
-    begin
-        if fig[1][i] = -1 then
+function delete_bad(var fig: figure; el: int64): int64;
+begin
+        for var i := el downto 1 do
         begin
-            delete2(fig, el - result, i);
-            result := result + 1;
+                if fig[1][i] = -1 then
+                begin
+                        delete2(fig, el - result, i);
+                        result := result + 1;
+                end;
         end;
-    end;
 end;
 
 //удаляет все заданные элементы массива fig, а также элементы массива fig2, стоящие на тех же местах
-function delete_bad2(var fig, fig2 : figure; el : int64) : int64;
-begin 
-    for var i := el downto 1 do
-    begin
-        if fig[1][i] = -1 then
+function delete_bad2(var fig, fig2: figure; el: int64): int64;
+begin
+        for var i := el downto 1 do
         begin
-            delete2(fig, el - result, i);
-            delete2(fig2, el - result, i);
-            result := result + 1;
+                if fig[1][i] = -1 then
+                begin
+                        delete2(fig, el - result, i);
+                        delete2(fig2, el - result, i);
+                        result := result + 1;
+                end;
         end;
-    end;
 end;
 
 //удаляем дубликаты
-function delete_doubles(fig : figure; el : int64) : int64;
-begin 
-    for var i := 1 to el do///идём по добавляемым вершинам
-    begin
-        for var j := 1 to el do///снова идём по добавляемым вершинам
+function delete_doubles(fig: figure; el: int64): int64;
+begin
+        for var i := 1 to el do///идём по добавляемым вершинам
         begin
-            if (Abs(fig[1][i] - fig[1][j]) < 1) and (Abs(fig[2][i] - fig[2][j]) < 1) and not (i = j) then
-            begin 
-                fig[1][Max(i, j)] := -1;
-                fig[2][Max(i, j)] := -1;
-            end;
+                for var j := 1 to el do///снова идём по добавляемым вершинам
+                begin
+                        if (Abs(fig[1][i] - fig[1][j]) < 1) and (Abs(fig[2][i] - fig[2][j]) < 1) and not (i = j) then
+                        begin
+                                fig[1][Max(i, j)] := -1;
+                                fig[2][Max(i, j)] := -1;
+                        end;
+                end;
         end;
-    end;
-    result := delete_bad(fig, el);//само удаление
+        result := delete_bad(fig, el);//само удаление
 end;
 
-function points_dist(x1, y1, x2, y2 : real) : real;//расстояние между двумя точками
-begin 
-    result := Sqrt(Sqr(x1 - x2) + Sqr(y1 - y2));
+function points_dist(x1, y1, x2, y2: real): real;//расстояние между двумя точками
+begin
+        result := Sqrt(Sqr(x1 - x2) + Sqr(y1 - y2));
 end;
 
-procedure insert(num_insert, len_place : int64; var place_insert : figure);//вставляет len_place-ный элемент массива place_insert в позицию num_insert
-var prom : real;
-begin 
-    prom := place_insert[1][num_insert];
-    place_insert[1][num_insert] := place_insert[1][len_place];
-    for var pointup := num_insert + 1 to len_place - 1 do
-    begin
-        place_insert[1][num_insert + len_place - pointup + 1] := place_insert[1][num_insert + len_place - pointup];
-    end;
-    place_insert[1][num_insert + 1] := prom; 
-    prom := place_insert[2][num_insert];
-    place_insert[2][num_insert] := place_insert[2][len_place];
-    for var pointup := num_insert + 1 to len_place - 1 do
-    begin
-        place_insert[2][num_insert + len_place - pointup + 1] := place_insert[2][num_insert + len_place - pointup];
-    end;
-    place_insert[2][num_insert + 1] := prom;
+procedure insert(num_insert, len_place: int64; var place_insert: figure);//вставляет len_place-ный элемент массива place_insert в позицию num_insert
+var
+        prom: real;
+begin
+        prom := place_insert[1][num_insert];
+        place_insert[1][num_insert] := place_insert[1][len_place];
+        for var pointup := num_insert + 1 to len_place - 1 do
+        begin
+                place_insert[1][num_insert + len_place - pointup + 1] := place_insert[1][num_insert + len_place - pointup];
+        end;
+        place_insert[1][num_insert + 1] := prom; 
+        prom := place_insert[2][num_insert];
+        place_insert[2][num_insert] := place_insert[2][len_place];
+        for var pointup := num_insert + 1 to len_place - 1 do
+        begin
+                place_insert[2][num_insert + len_place - pointup + 1] := place_insert[2][num_insert + len_place - pointup];
+        end;
+        place_insert[2][num_insert + 1] := prom;
 end;
 
-function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2 : int64) : boolean;//объединяет фигуры и кладёт объединение в union (если фигуры не пересекаются выдает false)
-var fig1, fig2, add, place_add : figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
+function Union_figures(var figure1, figure2, union: figure; num_vertex1, num_vertex2: int64): boolean;//объединяет фигуры и кладёт объединение в union (если фигуры не пересекаются выдает false)
+var
+        fig1, fig2, add, place_add: figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
 //var : array [1.. 100000] of int64;
-var intersections{, delete_old} : array [1..2, 1.. 100000] of boolean;//является ли точка фигуры пересечением
-var num_points, num_add, num_vert1, num_vert2 : int64;//num_points : длина массива intersections, num_add : длина массива add
-begin 
-    fig1 := figure1;//копируем первую фигуру
-    fig2 := figure2;//копируем вторую фигуру
-    num_vert1 := num_vertex1;
-    num_vert2 := num_vertex2;
-    fig1[1][num_vert1 + 1] := fig1[1][1];//замыкаем фигуры
-    fig2[1][num_vert2 + 1] := fig2[1][1];
-    fig1[2][num_vert1 + 1] := fig1[2][1];
-    fig2[2][num_vert2 + 1] := fig2[2][1];
-    num_points := num_vert1 + num_vert2;//пока просто суммируем кол-ва точек в фигурах
-    {points := fig1;
-    for var i := 1 to num_vert2 do
-    begin
-        points[1][i + num_vert1] := fig2[1][i];
-        points[2][i + num_vert1] := fig2[2][i];
-    end;}
-    //начинаем искать коорднаты пересечений
-    for var i1 := 1 to num_vert1 do//идём по первой фигуре
-    begin
-        for var i2 := 1 to num_vert2 do//идём по второй фигуре
-        begin
-            var x, y : real;//пересечение линий (которые являются продолжениями сторон)
-            intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1], x, y);
-            //проверяем пересекаются ли отрезки
-            if (get_line_intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1]) or (points_dist(x, y, fig2[1][i2 + 1], fig2[2][i2 + 1]) < 1) or (points_dist(x, y, fig2[1][i2], fig2[2][i2]) < 1) or (points_dist(x, y, fig1[1][i1 + 1], fig1[2][i1 + 1]) < 1) or (points_dist(x, y, fig1[1][i1], fig1[2][i1]) < 1)) and (x / x = 1) then
-            begin
-                add[1][num_add + 1] := x;//заносим пересечение в add
-                add[2][num_add + 1] := y;
-                place_add[1][num_add + 1] := i1;//заносим место куда вставить в place_add
-                place_add[2][num_add + 1] := i2;
-                num_add := num_add + 1;//увеличиваем кол-во пересечений на 1
-                //Println(Round(x), Round(y), i1, i2);
-            end;
-        end;
-    end;
-    if num_add = 0 then
-    begin
-        Result := false;
-        exit;
-    end;
-    Result := true;
-    //удаляем дубликаты
-    for var i := 1 to num_add do///идём по добавляемым вершинам
-    begin
-        for var j := 1 to num_add do///снова идём по добавляемым вершинам
-        begin
-            if (Abs(add[1][i] - add[1][j]) < 1) and (Abs(add[2][i] - add[2][j]) < 1) and not (i = j) then
-            begin 
-                add[1][Max(i, j)] := -1;
-                add[2][Max(i, j)] := -1;
-            end;
-        end;
-    end;
-    num_add := num_add - delete_bad2(add, place_add, num_add);//само удаление
-    //удаляем те точки, которые не лежат на сторонах фигуры 1
-    for var vert := num_add downto 1 do
-    begin
-        var bad_vert : boolean;//плохая ли вершина
-        bad_vert := true;//до проверки она плохая
-        for var i := 1 to num_vert1 do//идём по вершинам фигуры
-        begin
-            //и если вершина лежит на какой-то стороне...
-            if segment_and_pixel(add[1][vert], add[2][vert], fig1[1][i], fig1[1][i + 1], fig1[2][i], fig1[2][i + 1]) then
-                bad_vert := false;//...она хорошая
-        end;
-        if bad_vert then//если она не хорошая...
-        begin
-            //SetBrushColor(RGB(150, 90, 0));
-            //SetPenColor(RGB(150, 90, 0));
-            //Circle(Round(add[1][vert]), Round(add[2][vert]), 5);
-            delete2(add, num_add, vert);//...мы её удалим
-            num_add := num_add - 1;
-        end;
-    end;
-    //тоже для фигуры 2
-    for var vert := num_add downto 1 do
-    begin
-        var bad_vert : boolean;
-        bad_vert := true;
+var
+        intersections{, delete_old} : array [1..2, 1.. 100000] of boolean;//является ли точка фигуры пересечением
+var
+        num_points, num_add, num_vert1, num_vert2: int64;//num_points : длина массива intersections, num_add : длина массива add
+begin
+        fig1 := figure1;//копируем первую фигуру
+        fig2 := figure2;//копируем вторую фигуру
+        num_vert1 := num_vertex1;
+        num_vert2 := num_vertex2;
+        fig1[1][num_vert1 + 1] := fig1[1][1];//замыкаем фигуры
+        fig2[1][num_vert2 + 1] := fig2[1][1];
+        fig1[2][num_vert1 + 1] := fig1[2][1];
+        fig2[2][num_vert2 + 1] := fig2[2][1];
+        num_points := num_vert1 + num_vert2;//пока просто суммируем кол-ва точек в фигурах
+        {points := fig1;
         for var i := 1 to num_vert2 do
         begin
-            if segment_and_pixel(add[1][vert], add[2][vert], fig2[1][i], fig2[1][i + 1], fig2[2][i], fig2[2][i + 1]) then
-                bad_vert := false;
-        end;
-        if bad_vert then 
+            points[1][i + num_vert1] := fig2[1][i];
+            points[2][i + num_vert1] := fig2[2][i];
+        end;}
+        //начинаем искать коорднаты пересечений
+        for var i1 := 1 to num_vert1 do//идём по первой фигуре
         begin
-            //SetBrushColor(RGB(150, 0, 0));
-            //SetPenColor(RGB(150, 0, 0));
-            //Circle(Round(add[1][vert]), Round(add[2][vert]), 5);
-            delete2(add, num_add, vert);
-            num_add := num_add - 1;
+                for var i2 := 1 to num_vert2 do//идём по второй фигуре
+                begin
+                        var x, y: real;//пересечение линий (которые являются продолжениями сторон)
+                        intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1], x, y);
+                        //проверяем пересекаются ли отрезки
+                        if (get_line_intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1]) or (points_dist(x, y, fig2[1][i2 + 1], fig2[2][i2 + 1]) < 1) or (points_dist(x, y, fig2[1][i2], fig2[2][i2]) < 1) or (points_dist(x, y, fig1[1][i1 + 1], fig1[2][i1 + 1]) < 1) or (points_dist(x, y, fig1[1][i1], fig1[2][i1]) < 1)) and (x / x = 1) then
+                        begin
+                                add[1][num_add + 1] := x;//заносим пересечение в add
+                                add[2][num_add + 1] := y;
+                                place_add[1][num_add + 1] := i1;//заносим место куда вставить в place_add
+                                place_add[2][num_add + 1] := i2;
+                                num_add := num_add + 1;//увеличиваем кол-во пересечений на 1
+                                //Println(Round(x), Round(y), i1, i2);
+                        end;
+                end;
         end;
-    end;
-    {for var i := 1 to num_add do
-    begin
-        fig1[1][num_vert1 + 1] := add[1][i];
-        fig1[2][num_vert1 + 1] := add[2][i];
-        fig2[1][num_vert2 + 1] := add[1][i];
-        fig2[2][num_vert2 + 1] := add[2][i];
-        num_vert1 := num_vert1 + 1;
-        num_vert2 := num_vert2 + 1;
-        insert(fig1)
-    end;}
-    for var i := 1 to num_add do
-    begin
-        SetBrushColor(clBlue);
-        SetPenColor(clBlue);
-        Circle(Round(add[1][i]), Round(add[2][i]), 5);
-    end;
-    Print(num_add);
- end;
+        if num_add = 0 then
+        begin
+                Result := false;
+                exit;
+        end;
+        Result := true;
+        //удаляем дубликаты
+        for var i := 1 to num_add do///идём по добавляемым вершинам
+        begin
+                for var j := 1 to num_add do///снова идём по добавляемым вершинам
+                begin
+                        if (Abs(add[1][i] - add[1][j]) < 1) and (Abs(add[2][i] - add[2][j]) < 1) and not (i = j) then
+                        begin
+                                add[1][Max(i, j)] := -1;
+                                add[2][Max(i, j)] := -1;
+                        end;
+                end;
+        end;
+        num_add := num_add - delete_bad2(add, place_add, num_add);//само удаление
+        //удаляем те точки, которые не лежат на сторонах фигуры 1
+        for var vert := num_add downto 1 do
+        begin
+                var bad_vert: boolean;//плохая ли вершина
+                bad_vert := true;//до проверки она плохая
+                for var i := 1 to num_vert1 do//идём по вершинам фигуры
+                begin
+                        //и если вершина лежит на какой-то стороне...
+                        if segment_and_pixel(add[1][vert], add[2][vert], fig1[1][i], fig1[1][i + 1], fig1[2][i], fig1[2][i + 1]) then
+                                bad_vert := false;//...она хорошая
+                end;
+                if bad_vert then//если она не хорошая...
+                begin
+                        //SetBrushColor(RGB(150, 90, 0));
+                        //SetPenColor(RGB(150, 90, 0));
+                        //Circle(Round(add[1][vert]), Round(add[2][vert]), 5);
+                        delete2(add, num_add, vert);//...мы её удалим
+                        num_add := num_add - 1;
+                end;
+        end;
+        //тоже для фигуры 2
+        for var vert := num_add downto 1 do
+        begin
+                var bad_vert: boolean;
+                bad_vert := true;
+                for var i := 1 to num_vert2 do
+                begin
+                        if segment_and_pixel(add[1][vert], add[2][vert], fig2[1][i], fig2[1][i + 1], fig2[2][i], fig2[2][i + 1]) then
+                                bad_vert := false;
+                end;
+                if bad_vert then 
+                begin
+                        //SetBrushColor(RGB(150, 0, 0));
+                        //SetPenColor(RGB(150, 0, 0));
+                        //Circle(Round(add[1][vert]), Round(add[2][vert]), 5);
+                        delete2(add, num_add, vert);
+                        num_add := num_add - 1;
+                end;
+        end;
+        {for var i := 1 to num_add do
+        begin
+            fig1[1][num_vert1 + 1] := add[1][i];
+            fig1[2][num_vert1 + 1] := add[2][i];
+            fig2[1][num_vert2 + 1] := add[1][i];
+            fig2[2][num_vert2 + 1] := add[2][i];
+            num_vert1 := num_vert1 + 1;
+            num_vert2 := num_vert2 + 1;
+            insert(fig1)
+        end;}
+        for var i := 1 to num_add do
+        begin
+                SetBrushColor(clBlue);
+                SetPenColor(clBlue);
+                Circle(Round(add[1][i]), Round(add[2][i]), 5);
+        end;
+        Print(num_add);
+end;
+
+procedure Union_of_all_figures(l: int64; var sort_number_global: number; var sort_intersections_global: global);
+begin
+        var i: int64;
+        var union: figure;
+        i := 1;
+        while(i < l) do
+        begin
+                for var j := i + 1 to l do
+                begin
+                        if(Union_figures(sort_intersections_global[i], sort_intersections_global[j], union, sort_number_global[i], sort_number_global[j])) then
+                        begin
+                                sort_intersections_global[i] := union;
+                                sort_number_global[i] := sort_number_global[i] + sort_number_global[j];
+                                for var k := j to l do
+                                begin
+                                        sort_intersections_global[k] := sort_intersections_global[k + 1];
+                                        sort_number_global[k] := sort_number_global[k + 1];
+                                end;
+                                i -= 1;
+                                break;
+                        end;
+                end;
+                i += 1;
+        end;
+end;
 
 { ************************  векторное пересечение   *******************************************} 
 function vector_multiplicator(vek1_x, vek1_y, vek2_x, vek2_y: int64): int64;
@@ -304,19 +342,19 @@ begin
                         intln := false; 
                         for var i := 1 to f - 3 do
                         begin
-                            if get_line_intersection(x, y, Gallery[1][f - 1], Gallery[2][f - 1], Gallery[1][i], Gallery[2][i], Gallery[1][i + 1], Gallery[2][i + 1]) then
-                            begin
-                                intln := true; 
-                            end;
+                                if get_line_intersection(x, y, Gallery[1][f - 1], Gallery[2][f - 1], Gallery[1][i], Gallery[2][i], Gallery[1][i + 1], Gallery[2][i + 1]) then
+                                begin
+                                        intln := true; 
+                                end;
                         end;
                         if not intln then
                         begin
-                            LineTo(Gallery[1][1], Gallery[2][1]);
-                            Gallery[1][f] := Gallery[1][1];
-                            Gallery[2][f] := Gallery[2][1];
-                            Gallery[1][0] := Gallery[1][f - 1];
-                            Gallery[2][0] := Gallery[2][f - 1];
-                            y_n := 2;
+                                LineTo(Gallery[1][1], Gallery[2][1]);
+                                Gallery[1][f] := Gallery[1][1];
+                                Gallery[2][f] := Gallery[2][1];
+                                Gallery[1][0] := Gallery[1][f - 1];
+                                Gallery[2][0] := Gallery[2][f - 1];
+                                y_n := 2;
                         end;
                 end
                 else 
@@ -324,19 +362,19 @@ begin
                         intln := false; 
                         for var i := 1 to f - 3 do
                         begin
-                            if get_line_intersection(x, y, Gallery[1][f - 1], Gallery[2][f - 1], Gallery[1][i], Gallery[2][i], Gallery[1][i + 1], Gallery[2][i + 1]) then
-                            begin
-                                intln := true; 
-                            end;
+                                if get_line_intersection(x, y, Gallery[1][f - 1], Gallery[2][f - 1], Gallery[1][i], Gallery[2][i], Gallery[1][i + 1], Gallery[2][i + 1]) then
+                                begin
+                                        intln := true; 
+                                end;
                         end;
                         if not intln then
                         begin;
-                            LineTo(x, y);
-                            Gallery[1][f] := x;
-                            Gallery[2][f] := y; //strp := IntToStr(x) + ',' + IntToStr(y);
-                        //                        TextOut(x, y+20, strp);
-                            f += 1;
-                       end
+                                LineTo(x, y);
+                                Gallery[1][f] := x;
+                                Gallery[2][f] := y; //strp := IntToStr(x) + ',' + IntToStr(y);
+                                //                        TextOut(x, y+20, strp);
+                                f += 1;
+                        end
                 end;
         end;
         {**************************** ставим первую точку галереи *****************************}
@@ -356,10 +394,10 @@ begin
         if (y_n = 2 + kol) then
         begin
                 var intersections_local{точки пересечения со стенками у одного луча}, intersections_zero: figure;
-                var intersections_global{точки пересечения со стенками у всех лучей всех охранников}, sort_intersections_global: array[1..1000]of figure;
+                var intersections_global{точки пересечения со стенками у всех лучей всех охранников}, sort_intersections_global: global;
                 var number_local: int64;
                 var xp, yp: real;
-                var number_global{ //массив длин элементов массива intersection global (для i-го охранника  - сколько раз все лучи, выходящие из него, пересекают любые стенки)}, sort_number_global: array[1..1000]of int64;
+                var number_global{ //массив длин элементов массива intersection global (для i-го охранника  - сколько раз все лучи, выходящие из него, пересекают любые стенки)}, sort_number_global: number;
                 //sum := 0;
                 number_local := 1;
                 s := 0;
@@ -503,93 +541,73 @@ begin
                                 number_local := 1;
                         end;
                 end;
-                var i :int64;
-                var union :figure;
-                i := 1;
-                while(i<l)do
-                begin
-                  for var j := i+1 to l do
-                  begin
-                    if(Union_figures(sort_intersections_global[i],sort_intersections_global[j],union,sort_number_global[i],sort_number_global[j]))then
-                    begin
-                      sort_intersections_global[i]:= union;
-                      for var k := j to l do
-                      begin
-                        sort_intersections_global[k]:= sort_intersections_global[k+1];
-                      end;
-                      i-=1;
-                      break;
-                    end;
-                  end;
-                  i+=1;
-                end;
-//                for var i := 1 to 67 do
-//                begin
-//                    a[i] := clRandom;
-//                end;
-                //                for var i := 1 to l - 1 do // идем по охранникам
-//                begin
-//                        //                        SetBrushColor(a[i]);
-//                        //                        SetPenColor(a[i]);
-//                        //                        circle(Guards[1][i], Guards[2][i], 10);
-//                        for var j := 1 to sort_number_global[i] - 1 do//идём по узлам охранников
-//                        begin
-//                                //Println(i, j, sort_intersections_global[i][1][j], sort_intersections_global[i][2][j]); // здесь лежат все точки,которые видят все охранники
-//                                ///соединяем все узлы охранника
-//                                if((Round(sort_intersections_global[i][1][j - zzzz]) = Round(sort_intersections_global[i][1][j + 1 - zzzz])) and (Round(sort_intersections_global[i][2][j - zzzz]) = Round(sort_intersections_global[i][2][j + 1 - zzzz])) and (Round(sort_intersections_global[i][2][j - zzzz])<>0)) then
-//                                begin
-//                                        println(i, j,sort_intersections_global[i][1][j],sort_intersections_global[i][2][j],zzzz);
-//                                        zzzz += 1;
-//                                        //удаляем совпадающие узлы
-//                                       for var o := j to sort_number_global[i] - zzzz + 1 do
-//                                        begin
-//                                                //sort_intersections_global[i][1][o] := sort_intersections_global[i][1][o + 1];
-//                                                //sort_intersections_global[i][2][o] := sort_intersections_global[i][2][o + 1];
-//                                        end;
-//                                end;
-//                                //                                Line(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), Round(sort_intersections_global[i][1][j + 1]), Round(sort_intersections_global[i][2][j + 1]));
-//                                //                                Circle(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), 5);
-//                                //                                TextOut(Round(sort_intersections_global[i][1][j]), round(sort_intersections_global[i][2][j]), j);
-//                        end;
-//                        sort_number_global[i] -= zzzz;
-//                        zzzz := 0;
-//                        //Print(sort_intersections_global[1],sort_number_global);
-//                end;
+                //                for var i := 1 to 67 do
+                //                begin
+                //                    a[i] := clRandom;
+                //                end;
+                                //                for var i := 1 to l - 1 do // идем по охранникам
+                //                begin
+                //                        //                        SetBrushColor(a[i]);
+                //                        //                        SetPenColor(a[i]);
+                //                        //                        circle(Guards[1][i], Guards[2][i], 10);
+                //                        for var j := 1 to sort_number_global[i] - 1 do//идём по узлам охранников
+                //                        begin
+                //                                //Println(i, j, sort_intersections_global[i][1][j], sort_intersections_global[i][2][j]); // здесь лежат все точки,которые видят все охранники
+                //                                ///соединяем все узлы охранника
+                //                                if((Round(sort_intersections_global[i][1][j - zzzz]) = Round(sort_intersections_global[i][1][j + 1 - zzzz])) and (Round(sort_intersections_global[i][2][j - zzzz]) = Round(sort_intersections_global[i][2][j + 1 - zzzz])) and (Round(sort_intersections_global[i][2][j - zzzz])<>0)) then
+                //                                begin
+                //                                        println(i, j,sort_intersections_global[i][1][j],sort_intersections_global[i][2][j],zzzz);
+                //                                        zzzz += 1;
+                //                                        //удаляем совпадающие узлы
+                //                                       for var o := j to sort_number_global[i] - zzzz + 1 do
+                //                                        begin
+                //                                                //sort_intersections_global[i][1][o] := sort_intersections_global[i][1][o + 1];
+                //                                                //sort_intersections_global[i][2][o] := sort_intersections_global[i][2][o + 1];
+                //                                        end;
+                //                                end;
+                //                                //                                Line(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), Round(sort_intersections_global[i][1][j + 1]), Round(sort_intersections_global[i][2][j + 1]));
+                //                                //                                Circle(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), 5);
+                //                                //                                TextOut(Round(sort_intersections_global[i][1][j]), round(sort_intersections_global[i][2][j]), j);
+                //                        end;
+                //                        sort_number_global[i] -= zzzz;
+                //                        zzzz := 0;
+                //                        //Print(sort_intersections_global[1],sort_number_global);
+                //                end;
                 for var g := 7 to 7 * l - 1 do//7 раз идём по охранникам
                 begin
-                     for var i := 1 to sort_number_global[g div 7] - 2 do//идём по вершинам заново
-                     begin
-                         //если 3 точки лежат на одной прямой, то отмечаем их для delete_bad
-                         if segment_and_pixel(sort_intersections_global[g div 7][1][i + 1], sort_intersections_global[g div 7][2][i + 1], sort_intersections_global[g div 7][1][i], sort_intersections_global[g div 7][1][i + 2], sort_intersections_global[g div 7][2][i], sort_intersections_global[g div 7][2][i + 2]) then
-                         begin
-                             //SetBrushColor(clRed);
-                             //Circle(Round(sort_intersections_global[g div 7][1][i + 1]), Round(sort_intersections_global[g div 7][2][i + 1]), 5);
-                             sort_intersections_global[g div 7][1][i + 1] := -1;
-                             sort_intersections_global[g div 7][2][i + 1] := -1;
-                         end;    
-                     end;
-                     //обходим эффкт круга
-                     if segment_and_pixel(sort_intersections_global[g div 7][1][sort_number_global[g div 7]], sort_intersections_global[g div 7][2][sort_number_global[g div 7]], sort_intersections_global[g div 7][1][sort_number_global[g div 7] - 1], sort_intersections_global[g div 7][1][1], sort_intersections_global[g div 7][2][sort_number_global[g div 7] - 1], sort_intersections_global[g div 7][2][1]) then
-                     begin
-                         //SetBrushColor(clRed);
-                         //Circle(Round(sort_intersections_global[g div 7][1][sort_number_global[g div 7]]), Round(sort_intersections_global[g div 7][2][sort_number_global[g div 7]]), 5);
-                         sort_intersections_global[g div 7][1][sort_number_global[g div 7]] := -1;
-                         sort_intersections_global[g div 7][2][sort_number_global[g div 7]] := -1;
-                     end;
-                     //обходим эффкт круга
-                     if segment_and_pixel(sort_intersections_global[g div 7][1][1], sort_intersections_global[g div 7][2][1], sort_intersections_global[g div 7][1][sort_number_global[g div 7]], sort_intersections_global[g div 7][1][2], sort_intersections_global[g div 7][2][sort_number_global[g div 7]], sort_intersections_global[g div 7][2][2]) then
-                     begin
-                         sort_intersections_global[g div 7][1][1] := -1;
-                         sort_intersections_global[g div 7][2][1] := -1;
-                     end;
-                     sort_number_global[g div 7] := sort_number_global[g div 7] - delete_bad(sort_intersections_global[g div 7], sort_number_global[g div 7] + 1);//удаляем отмеченые нами ранее вершины
+                        for var i := 1 to sort_number_global[g div 7] - 2 do//идём по вершинам заново
+                        begin
+                                //если 3 точки лежат на одной прямой, то отмечаем их для delete_bad
+                                if segment_and_pixel(sort_intersections_global[g div 7][1][i + 1], sort_intersections_global[g div 7][2][i + 1], sort_intersections_global[g div 7][1][i], sort_intersections_global[g div 7][1][i + 2], sort_intersections_global[g div 7][2][i], sort_intersections_global[g div 7][2][i + 2]) then
+                                begin
+                                        //SetBrushColor(clRed);
+                                        //Circle(Round(sort_intersections_global[g div 7][1][i + 1]), Round(sort_intersections_global[g div 7][2][i + 1]), 5);
+                                        sort_intersections_global[g div 7][1][i + 1] := -1;
+                                        sort_intersections_global[g div 7][2][i + 1] := -1;
+                                end;    
+                        end;
+                        //обходим эффкт круга
+                        if segment_and_pixel(sort_intersections_global[g div 7][1][sort_number_global[g div 7]], sort_intersections_global[g div 7][2][sort_number_global[g div 7]], sort_intersections_global[g div 7][1][sort_number_global[g div 7] - 1], sort_intersections_global[g div 7][1][1], sort_intersections_global[g div 7][2][sort_number_global[g div 7] - 1], sort_intersections_global[g div 7][2][1]) then
+                        begin
+                                //SetBrushColor(clRed);
+                                //Circle(Round(sort_intersections_global[g div 7][1][sort_number_global[g div 7]]), Round(sort_intersections_global[g div 7][2][sort_number_global[g div 7]]), 5);
+                                sort_intersections_global[g div 7][1][sort_number_global[g div 7]] := -1;
+                                sort_intersections_global[g div 7][2][sort_number_global[g div 7]] := -1;
+                        end;
+                        //обходим эффкт круга
+                        if segment_and_pixel(sort_intersections_global[g div 7][1][1], sort_intersections_global[g div 7][2][1], sort_intersections_global[g div 7][1][sort_number_global[g div 7]], sort_intersections_global[g div 7][1][2], sort_intersections_global[g div 7][2][sort_number_global[g div 7]], sort_intersections_global[g div 7][2][2]) then
+                        begin
+                                sort_intersections_global[g div 7][1][1] := -1;
+                                sort_intersections_global[g div 7][2][1] := -1;
+                        end;
+                        sort_number_global[g div 7] := sort_number_global[g div 7] - delete_bad(sort_intersections_global[g div 7], sort_number_global[g div 7] + 1);//удаляем отмеченые нами ранее вершины
                 end;
                 for var g := 1 to l - 1 do
-                    sort_number_global[g] := sort_number_global[g] - delete_doubles(sort_intersections_global[g], sort_number_global[g]);
+                        sort_number_global[g] := sort_number_global[g] - delete_doubles(sort_intersections_global[g], sort_number_global[g]);
                 for var i := 1 to l - 1 do // идем по охранникам
                 begin
-                        SetBrushColor(ARGB(0,0,0,0));
-                        TextOut(Guards[1][i]+3, Guards[2][i], i);
+                        SetBrushColor(ARGB(0, 0, 0, 0));
+                        TextOut(Guards[1][i] + 3, Guards[2][i], i);
                         SetBrushColor(a[i]);
                         SetPenColor(a[i]);
                         circle(Guards[1][i], Guards[2][i], 10);
@@ -597,81 +615,81 @@ begin
                         begin
                                 //Println(i, j, sort_intersections_global[i][1][j], sort_intersections_global[i][2][j]); // здесь лежат все точки,которые видят все охранники
                                 //соединяем все узлы охранника
-                                SetBrushColor(ARGB(0,0,0,0));
+                                SetBrushColor(ARGB(0, 0, 0, 0));
                                 Line(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), Round(sort_intersections_global[i][1][j + 1]), Round(sort_intersections_global[i][2][j + 1]));
                                 Circle(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), 5);
-                                TextOut(Round(sort_intersections_global[i][1][j])+3, round(sort_intersections_global[i][2][j]), j);
+                                TextOut(Round(sort_intersections_global[i][1][j]) + 3, round(sort_intersections_global[i][2][j]), j);
                                 {Print(sort_intersections_global[i][1][j]);
                                 Print(sort_intersections_global[i][2][j]);}
                         end;
                         Line(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), Round(sort_intersections_global[i][1][1]), Round(sort_intersections_global[i][2][1]));
                         Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
-                        TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]])+3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
+                        TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]]) + 3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
                 end;
                 Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2])
-//                var xxx, yyy: real;
-//                for var i := 1 to l - 1 do
-//                begin
-//                        for var j := i + 1 to l - 1 do
-//                        begin
-//                                for var k := 1 to sort_number_global[i] - 2 do
-//                                begin
-//                                        for var o := 1 to sort_number_global[j] - 2 do
-//                                        begin
-//                                                //Line(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]));
-//                                                //Print(j, i);
-//                                                if((Round(sort_intersections_global[i][1][k]) <> Round(sort_intersections_global[i][1][k + 1])) and (Round(sort_intersections_global[i][2][k]) <> Round(sort_intersections_global[i][2][k + 1]))) then
-//                                                begin
-//                                                        if(get_line_intersection(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), Round(sort_intersections_global[j][1][o]), Round(sort_intersections_global[j][2][o]), Round(sort_intersections_global[j][1][o + 1]), Round(sort_intersections_global[j][2][o + 1]))) then
-//                                                        begin
-//                                                                intersection(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), Round(sort_intersections_global[j][1][o]), Round(sort_intersections_global[j][2][o]), Round(sort_intersections_global[j][1][o + 1]), Round(sort_intersections_global[j][2][o + 1]), xxx, yyy);
-//                                                                SetBrushColor(clred);
-//                                                                SetPenColor(clRed);
-//                                                                if((xxx / xxx) = 1) then
-//                                                                begin
-//                                                                        //Print(xxx, yyy);
-//                                                                        //Println(k, l, Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), Round(sort_intersections_global[j][1][o]), Round(sort_intersections_global[j][2][o]), Round(sort_intersections_global[j][1][o + 1]), Round(sort_intersections_global[j][2][o + 1]))
-//                                                                        //Line(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]));
-//                                                                        Circle(Round(xxx), Round(yyy), 5);
-//                                                                end
-//                                                                else
-//                                                                begin
-//                                                                        SetBrushColor(clGreen);
-//                                                                        SetPenColor(clGreen);
-//                                                                        if(((sort_intersections_global[i][1][k] - sort_intersections_global[j][1][o + 1]) ** 2 + (sort_intersections_global[i][2][k] - sort_intersections_global[j][2][o + 1]) ** 2) > ((sort_intersections_global[i][1][k + 1] - sort_intersections_global[j][1][o]) ** 2 + (sort_intersections_global[i][2][k + 1] - sort_intersections_global[j][2][o]) ** 2)) then
-//                                                                        begin
-//                                                                                Circle(Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), 5);
-//                                                                                Circle(Round(sort_intersections_global[i][1][o]), Round(sort_intersections_global[i][2][o]), 5);
-//                                                                                Circle(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), 5);
-//                                                                                Circle(Round(sort_intersections_global[i][1][o + 1]), Round(sort_intersections_global[i][2][o + 1]), 5);
-//                                                                        end
-//                                                                        else
-//                                                                        begin
-//                                                                                Circle(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), 5);
-//                                                                                Circle(Round(sort_intersections_global[i][1][o + 1]), Round(sort_intersections_global[i][2][o + 1]), 5);
-//                                                                                Circle(Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), 5);
-//                                                                                Circle(Round(sort_intersections_global[i][1][o]), Round(sort_intersections_global[i][2][o]), 5);
-//                                                                        end;
-//                                                                        //                                                                        SetBrushColor(a[i]);
-//                                                                        //                                                                        SetPenColor(a[i]);
-//                                                                        //                                                                        Print(k);
-//                                                                        //                                                                        SetBrushColor(a[j]);
-//                                                                        //                                                                        SetPenColor(a[j]);
-//                                                                        //                                                                        Println(o);
-//                                                                        //                                                                        a[3] := clRandom;
-//                                                                        //                                                                        SetBrushColor(a[3]);
-//                                                                        //                                                                        SetPenColor(a[3]);
-//                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), 5);
-//                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][o+1]), Round(sort_intersections_global[i][2][o+1]), 5);
-//                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][k+1]), Round(sort_intersections_global[i][2][k+1]), 5);
-//                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][o]), Round(sort_intersections_global[i][2][o]), 5);
-//                                                                end;
-//                                                        end;
-//                                                end;
-//                                        end;
-//                                end;
-//                        end;
-//                end;
+                //                var xxx, yyy: real;
+                //                for var i := 1 to l - 1 do
+                //                begin
+                //                        for var j := i + 1 to l - 1 do
+                //                        begin
+                //                                for var k := 1 to sort_number_global[i] - 2 do
+                //                                begin
+                //                                        for var o := 1 to sort_number_global[j] - 2 do
+                //                                        begin
+                //                                                //Line(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]));
+                //                                                //Print(j, i);
+                //                                                if((Round(sort_intersections_global[i][1][k]) <> Round(sort_intersections_global[i][1][k + 1])) and (Round(sort_intersections_global[i][2][k]) <> Round(sort_intersections_global[i][2][k + 1]))) then
+                //                                                begin
+                //                                                        if(get_line_intersection(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), Round(sort_intersections_global[j][1][o]), Round(sort_intersections_global[j][2][o]), Round(sort_intersections_global[j][1][o + 1]), Round(sort_intersections_global[j][2][o + 1]))) then
+                //                                                        begin
+                //                                                                intersection(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), Round(sort_intersections_global[j][1][o]), Round(sort_intersections_global[j][2][o]), Round(sort_intersections_global[j][1][o + 1]), Round(sort_intersections_global[j][2][o + 1]), xxx, yyy);
+                //                                                                SetBrushColor(clred);
+                //                                                                SetPenColor(clRed);
+                //                                                                if((xxx / xxx) = 1) then
+                //                                                                begin
+                //                                                                        //Print(xxx, yyy);
+                //                                                                        //Println(k, l, Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), Round(sort_intersections_global[j][1][o]), Round(sort_intersections_global[j][2][o]), Round(sort_intersections_global[j][1][o + 1]), Round(sort_intersections_global[j][2][o + 1]))
+                //                                                                        //Line(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]));
+                //                                                                        Circle(Round(xxx), Round(yyy), 5);
+                //                                                                end
+                //                                                                else
+                //                                                                begin
+                //                                                                        SetBrushColor(clGreen);
+                //                                                                        SetPenColor(clGreen);
+                //                                                                        if(((sort_intersections_global[i][1][k] - sort_intersections_global[j][1][o + 1]) ** 2 + (sort_intersections_global[i][2][k] - sort_intersections_global[j][2][o + 1]) ** 2) > ((sort_intersections_global[i][1][k + 1] - sort_intersections_global[j][1][o]) ** 2 + (sort_intersections_global[i][2][k + 1] - sort_intersections_global[j][2][o]) ** 2)) then
+                //                                                                        begin
+                //                                                                                Circle(Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), 5);
+                //                                                                                Circle(Round(sort_intersections_global[i][1][o]), Round(sort_intersections_global[i][2][o]), 5);
+                //                                                                                Circle(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), 5);
+                //                                                                                Circle(Round(sort_intersections_global[i][1][o + 1]), Round(sort_intersections_global[i][2][o + 1]), 5);
+                //                                                                        end
+                //                                                                        else
+                //                                                                        begin
+                //                                                                                Circle(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), 5);
+                //                                                                                Circle(Round(sort_intersections_global[i][1][o + 1]), Round(sort_intersections_global[i][2][o + 1]), 5);
+                //                                                                                Circle(Round(sort_intersections_global[i][1][k + 1]), Round(sort_intersections_global[i][2][k + 1]), 5);
+                //                                                                                Circle(Round(sort_intersections_global[i][1][o]), Round(sort_intersections_global[i][2][o]), 5);
+                //                                                                        end;
+                //                                                                        //                                                                        SetBrushColor(a[i]);
+                //                                                                        //                                                                        SetPenColor(a[i]);
+                //                                                                        //                                                                        Print(k);
+                //                                                                        //                                                                        SetBrushColor(a[j]);
+                //                                                                        //                                                                        SetPenColor(a[j]);
+                //                                                                        //                                                                        Println(o);
+                //                                                                        //                                                                        a[3] := clRandom;
+                //                                                                        //                                                                        SetBrushColor(a[3]);
+                //                                                                        //                                                                        SetPenColor(a[3]);
+                //                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][k]), Round(sort_intersections_global[i][2][k]), 5);
+                //                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][o+1]), Round(sort_intersections_global[i][2][o+1]), 5);
+                //                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][k+1]), Round(sort_intersections_global[i][2][k+1]), 5);
+                //                                                                        //                                                                        Circle(Round(sort_intersections_global[i][1][o]), Round(sort_intersections_global[i][2][o]), 5);
+                //                                                                end;
+                //                                                        end;
+                //                                                end;
+                //                                        end;
+                //                                end;
+                //                        end;
+                //                end;
                 //                SetBrushColor(clGreen);
                 //                for var i := 1 to number_global - 2 do 
                 //                begin
