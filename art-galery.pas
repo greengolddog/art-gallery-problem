@@ -168,7 +168,7 @@ begin
     place_insert[2][num_insert + 1] := prom;
 end;
 
-function in_or_out(x_guard, y_guard, xxx, yyy, el : int64; fig : figure): boolean;
+function in_or_out(x_guard, y_guard, xxx, yyy : real; el : int64; fig : figure): boolean;
 begin
         var counter: int64;
         counter := 0;
@@ -195,38 +195,38 @@ begin
                 result := true;
 end;
 
-function in_or_out2(x_guard, y_guard: int64): boolean;
+function in_or_out2(x_guard, y_guard : real; el : int64; fig : figure): boolean;
 begin
         //Println()
-        if(in_or_out(x_guard, y_guard, 0, 0) <> in_or_out(x_guard, y_guard , WindowWidth(), WindowHeight())) then
+        if(in_or_out(x_guard, y_guard, 0, 0, el, fig) <> in_or_out(x_guard, y_guard , WindowWidth(), WindowHeight(), el, fig)) then
         begin
                 //Print(1);
-                if(in_or_out(x_guard, y_guard, 0, WindowHeight()) <> in_or_out(x_guard, y_guard, WindowWidth(), 0)) then
+                if(in_or_out(x_guard, y_guard, 0, WindowHeight(), el, fig) <> in_or_out(x_guard, y_guard, WindowWidth(), 0, el, fig)) then
                 begin
-                        if(in_or_out(x_guard, y_guard, 0, WindowHeight()div 2) <> in_or_out(x_guard, y_guard, WindowWidth(), WindowHeight()div 2)) then
+                        if(in_or_out(x_guard, y_guard, 0, WindowHeight()div 2, el, fig) <> in_or_out(x_guard, y_guard, WindowWidth(), WindowHeight()div 2, el, fig)) then
                         begin
-                                if(in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight()) <> in_or_out(x_guard, y_guard, WindowWidth()div 2, 0)) then
+                                if(in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight(), el, fig) <> in_or_out(x_guard, y_guard, WindowWidth()div 2, 0, el, fig)) then
                                 begin
                                         Result:= True;
                                 end
                                 else
                                 begin
-                                        Result := in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight());
+                                        Result := in_or_out(x_guard, y_guard, WindowWidth()div 2, WindowHeight(), el, fig);
                                 end;
                         end
                         else
                         begin
-                                Result := in_or_out(x_guard, y_guard, 0, WindowHeight()div 2);
+                                Result := in_or_out(x_guard, y_guard, 0, WindowHeight()div 2, el, fig);
                         end;
                 end
                 else
                 begin
-                        Result := in_or_out(x_guard, y_guard, 0, WindowHeight());
+                        Result := in_or_out(x_guard, y_guard, 0, WindowHeight(), el, fig);
                 end;
         end
         else
         begin
-                Result := in_or_out(x_guard, y_guard, 0, 0);
+                Result := in_or_out(x_guard, y_guard, 0, 0, el, fig);
         end;
 end;
 
@@ -242,21 +242,19 @@ begin
     place_insert[num_insert + 1] := prom;
 end;
 
-function sement_in_figure(fig : figure; num_vert, point_index : int64; x, y : real) : boolean;
+function segment_in_figure(fig : figure; num_vert, point_index : int64; x, y : real) : boolean;
 begin
     for var i := 1 to num_vert do
     begin
-        if (get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1) and (not ((point_index = 1) and (i = num_vert)))) or (in_or_out2()) then
-        begin
-        end;
+        result := (get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1) and (not ((point_index = 1) and (i = num_vert)))) or (in_or_out2(x, y, num_vert, fig)));
     end;
 end;
 
-function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2 : int64) : boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
+function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2, num_points : int64) : boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
 var fig1, fig2, add, place_add : figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
 //var : array [1.. 100000] of int64;
 var intersections1, intersections2{, delete_old} : booleans;//является ли точка фигуры пересечением
-var num_points, num_add, num_vert1, num_vert2, counter : int64;//num_points : длина массива intersections, num_add : длина массива add
+var num_add, num_vert1, num_vert2, counter, start, direction : int64;//num_points : длина массива intersections, num_add : длина массива add
 var in_fig1 : boolean;
 begin 
     fig1 := figure1;//копируем первую фигуру
@@ -267,7 +265,7 @@ begin
     fig2[1][num_vert2 + 1] := fig2[1][1];
     fig1[2][num_vert1 + 1] := fig1[2][1];
     fig2[2][num_vert2 + 1] := fig2[2][1];
-    num_points := num_vert1 + num_vert2;//пока просто суммируем кол-ва точек в фигурах
+    num_points := 0;//пока просто 0 точек
     {points := fig1;
     for var i := 1 to num_vert2 do
     begin
@@ -428,13 +426,121 @@ begin
             end;
         end;
     end;
-    for var i := 1 to num_add do
+    in_fig1 := true;
+    for var i := 1 to num_vert1 do
+    begin
+        if not in_or_out2(fig1[1][i], fig1[1][2], num_vert1, fig2) then
+        begin
+            counter := i;
+            start := i;
+            break;
+        end;
+    end;
+    for var i := 1 to num_vert1 + num_vert2 do
+    begin
+        num_points := num_points + 1;
+        if in_fig1 then
+        begin
+            union[1][i] := fig1[1][counter];
+            union[2][i] := fig1[2][counter];
+        end
+        else
+        begin
+            union[1][i] := fig2[1][counter];
+            union[2][i] := fig2[2][counter];
+        end;
+        if (not ((not intersections1[i]) and in_fig1)) and (not ((not intersections2[i]) and (not in_fig1))) then
+        begin
+            if index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) = 1 then
+            begin
+                if in_fig1 then
+                begin
+                    if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1]) then
+                    begin
+                        in_fig1 := false;
+                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        direction := 1;
+                    end
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
+                    begin
+                        in_fig1 := false;
+                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        direction := -1;
+                    end;
+                end
+                else
+                begin
+                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1], fig1[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1]) then
+                    begin
+                        in_fig1 := true;
+                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        direction := 1;
+                    end
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
+                    begin
+                        in_fig1 := true;
+                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        direction := -1;
+                    end;
+                end;
+            end
+            else
+            begin
+                if in_fig1 then
+                begin
+                    if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1]) then
+                    begin
+                        in_fig1 := false;
+                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        direction := 1;
+                    end
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) - 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) - 1]) then
+                    begin
+                        in_fig1 := false;
+                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        direction := -1;
+                    end;
+                end
+                else
+                begin
+                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1], fig1[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1]) then
+                    begin
+                        in_fig1 := true;
+                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        direction := 1;
+                    end
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) - 1], fig2[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) - 1]) then
+                    begin
+                        in_fig1 := true;
+                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        direction := -1;
+                    end;
+                end;
+            end;
+        end;
+        counter := counter + direction;
+        if counter < 1 then
+        begin
+            if in_fig1 then
+                counter := num_vert1
+            else
+                counter := num_vert2;
+        end;
+        if ((counter > num_vert1) and in_fig1) or ((counter > num_vert2) and (not in_fig1)) then
+            counter := 1;
+        if (counter = start) and in_fig1 and (i <> 1) then
+            break;
+    end;
+    union[1][num_points + 1] := union[1][1];
+    union[2][num_points + 1] := union[2][1];
+    for var i := 1 to num_points do
     begin
         SetBrushColor(clBlue);
         SetPenColor(clBlue);
-        Circle(Round(add[1][i]), Round(add[2][i]), 5);
+        Circle(Round(union[1][i]), Round(union[2][i]), 5);
+        Line(Round(union[1][i]), Round(union[2][i]), Round(union[1][i + 1]), Round(union[2][i + 1]));
     end;
-    Print(num_add);
+    Print(num_points);
  end;
 
 { ************************  векторное пересечение   *******************************************} 
@@ -754,7 +860,7 @@ begin
                         Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
                         TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]])+3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
                 end;
-                Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2])
+                Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2], sort_number_global[1000])
 //                var xxx, yyy: real;
 //                for var i := 1 to l - 1 do
 //                begin
