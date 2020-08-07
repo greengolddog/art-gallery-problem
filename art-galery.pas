@@ -243,11 +243,15 @@ begin
 end;
 
 function segment_in_figure(fig : figure; num_vert, point_index : int64; x, y : real) : boolean;
+var was_intersection : boolean;
 begin
+    was_intersection := false;
     for var i := 1 to num_vert do
     begin
-        result := (get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1) and (not ((point_index = 1) and (i = num_vert)))) or (in_or_out2(x, y, num_vert, fig)));
+        if get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1)) and (not ((point_index = 1) and (i = num_vert))) then
+            was_intersection := true
     end;
+    Result := was_intersection or in_or_out2(x, y, num_vert, fig);
 end;
 
 function Union_figures(var figure1, figure2, union : figure; num_vertex1, num_vertex2, num_points : int64) : boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
@@ -451,9 +455,9 @@ begin
         end;
         if (not ((not intersections1[i]) and in_fig1)) and (not ((not intersections2[i]) and (not in_fig1))) then
         begin
-            if index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) = 1 then
+            if in_fig1 then
             begin
-                if in_fig1 then
+                if index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) = 1 then
                 begin
                     if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1]) then
                     begin
@@ -470,24 +474,6 @@ begin
                 end
                 else
                 begin
-                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1], fig1[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1]) then
-                    begin
-                        in_fig1 := true;
-                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
-                        direction := 1;
-                    end
-                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
-                    begin
-                        in_fig1 := true;
-                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
-                        direction := -1;
-                    end;
-                end;
-            end
-            else
-            begin
-                if in_fig1 then
-                begin
                     if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1]) then
                     begin
                         in_fig1 := false;
@@ -498,6 +484,24 @@ begin
                     begin
                         in_fig1 := false;
                         counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        direction := -1;
+                    end;
+                end;
+            end
+            else
+            begin
+                if index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) = 1 then
+                begin
+                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1], fig1[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1]) then
+                    begin
+                        in_fig1 := true;
+                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        direction := 1;
+                    end
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
+                    begin
+                        in_fig1 := true;
+                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
                         direction := -1;
                     end;
                 end
@@ -860,7 +864,7 @@ begin
                         Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
                         TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]])+3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
                 end;
-                Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2], sort_number_global[1000])
+                Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[100], sort_number_global[1], sort_number_global[2], sort_number_global[100]);
 //                var xxx, yyy: real;
 //                for var i := 1 to l - 1 do
 //                begin
@@ -936,10 +940,23 @@ begin
                 //                sum := sum div 2;
                 //                sum := Round(Sqrt(sum ** 2));
                 //                Print(sum);
+        {var Gallery2 : figure;
+        for var i := 1 to f - 1 do
+        begin
+            Gallery2[1][i] := Gallery[1][i];
+            Gallery2[2][i] := Gallery[2][i];
         end;
+        Gallery2[1][f] := Gallery2[1][1];
+        Gallery2[2][f] := Gallery2[2][1];
+        SetPenColor(clBlue);
+        SetPenWidth(5); 
+        Line(x, y, Gallery[1][3], Gallery[2][3]);
+        Print(segment_in_figure(Gallery2, f, 3, x, y));}
+    end;
 end;
 
 begin
+    
                 {var a1, a2, a3, a4, a5, a6, a7, a8: int64;
                 var x, y: real;
                         a1 := Random(1, 800);
