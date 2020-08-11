@@ -119,7 +119,7 @@ function index(fig : figure; x, y : real; el : int64) : int64;
 begin
     for var i := 1 to el do
     begin
-        if (fig[1][i] = x) and (fig[2][i] = y) then
+        if (Abs(fig[1][i] - x) < 2) and (Abs(fig[2][i] - y) < 2) then
         begin
             Result := i;
             exit;
@@ -442,6 +442,7 @@ begin
     end;
     for var i := 1 to num_vert1 + num_vert2 do
     begin
+        var index_in_fig1, index_in_fig2 : int64;
         num_points := num_points + 1;
         if in_fig1 then
         begin
@@ -455,11 +456,14 @@ begin
         end;
         if (not ((not intersections1[i]) and in_fig1)) and (not ((not intersections2[i]) and (not in_fig1))) then
         begin
+            index_in_fig1 := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+            index_in_fig2 := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2); 
+            //Println('    ', index_in_fig2);
             if in_fig1 then
             begin
-                if index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) = 1 then
+                if index_in_fig2 <= 1 then
                 begin
-                    if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1]) then
+                    if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 + 1], fig2[2][index_in_fig2 + 1]) then
                     begin
                         in_fig1 := false;
                         counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
@@ -474,13 +478,13 @@ begin
                 end
                 else
                 begin
-                    if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) + 1]) then
+                    if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 + 1], fig2[2][index_in_fig2 + 1]) then
                     begin
                         in_fig1 := false;
                         counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
                         direction := 1;
                     end
-                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) - 1], fig2[2][index(fig2, fig1[1][counter], fig1[2][counter], num_vert2) - 1]) then
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 - 1], fig2[2][index_in_fig2 - 1]) then
                     begin
                         in_fig1 := false;
                         counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
@@ -490,33 +494,33 @@ begin
             end
             else
             begin
-                if index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) = 1 then
+                if index_in_fig1 <= 1 then
                 begin
-                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1], fig1[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1]) then
+                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
                     begin
                         in_fig1 := true;
-                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        counter := index_in_fig1;
                         direction := 1;
                     end
                     else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
                     begin
                         in_fig1 := true;
-                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        counter := index_in_fig1;
                         direction := -1;
                     end;
                 end
                 else
                 begin
-                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1], fig1[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) + 1]) then
+                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
                     begin
                         in_fig1 := true;
-                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        counter := index_in_fig1;
                         direction := 1;
                     end
-                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) - 1], fig2[2][index(fig1, fig2[1][counter], fig2[2][counter], num_vert1) - 1]) then
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig1 - 1], fig2[2][index_in_fig1 - 1]) then
                     begin
                         in_fig1 := true;
-                        counter := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
+                        counter := index_in_fig1;
                         direction := -1;
                     end;
                 end;
@@ -537,12 +541,18 @@ begin
     end;
     union[1][num_points + 1] := union[1][1];
     union[2][num_points + 1] := union[2][1];
-    for var i := 1 to num_points do
+    for var i := 1 to num_points do//отрисовка
     begin
         SetBrushColor(clBlue);
         SetPenColor(clBlue);
         Circle(Round(union[1][i]), Round(union[2][i]), 5);
         Line(Round(union[1][i]), Round(union[2][i]), Round(union[1][i + 1]), Round(union[2][i + 1]));
+    end; 
+    for var i := 1 to num_add do
+    begin
+        SetBrushColor(clRed);
+        SetPenColor(clRed);
+        Circle(Round(add[1][i]), Round(add[2][i]), 3)
     end;
     Print(num_points);
  end;
