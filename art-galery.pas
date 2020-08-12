@@ -283,7 +283,7 @@ begin
         Print(num_add);
 end;
 
-procedure Union_of_all_figures(l: int64; var sort_number_global: number; var sort_intersections_global: global);
+procedure Union_of_all_figures(var sort_number_global: number; var sort_intersections_global: global);
 begin
         var i: int64;
         var union: figure;
@@ -626,7 +626,7 @@ begin
                         Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
                         TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]]) + 3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
                 end;
-                Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2])
+                Union_of_all_figures(sort_number_global,sort_intersections_global);
                 //                var xxx, yyy: real;
                 //                for var i := 1 to l - 1 do
                 //                begin
