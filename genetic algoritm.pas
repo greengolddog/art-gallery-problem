@@ -7,7 +7,7 @@ type
         animal_array = array [1..6] of aray;
 
 var
-        y_n, num_of_walls, areas,zxzxzxzxzxz: int64;
+        y_n, num_of_walls, areas, zxzxzxzxzxz, counter_22, number, max_of_guards: int64;
 
 var
         i: array[1..2]of array[1..10000]of int64;
@@ -84,7 +84,7 @@ begin
         var r: int64;
         for var x := 1 to 6 do
         begin
-                r := Random(1, Ceil(num_of_walls / 3));
+                r := Random(1, max_of_guards);
                 for var y := 1 to r do
                 begin
                         //                        Print(in_or_out());
@@ -129,7 +129,7 @@ begin
         if Random(1, 10) = 1 then
         begin
                 //                Print(1);
-                if (d[n] = Ceil(num_of_walls / 3)) then
+                if (d[n] = max_of_guards) then
                 begin
                         var ad := Random(1, d[n]);
                         for var j := ad to d[n] do
@@ -252,21 +252,27 @@ begin
                 end;
                 //Print(1);
         end;
-                        //        var c: Color := RGB(Random(0,255),Random(0,255),Random(0,255));
-                        //        for var ii:=1 to l do
-                //        begin
-                //          SetBrushColor(c);
-                //          Circle(animal[ii][1], animal[ii][2], 3);
-                //        end;
-        //        Print(sum / area() * 100, sum, area);
-//        if((1000 / (l * (100 - (sum / areas * 100) + 1))) = (1000 / (l * (100 - (areas / areas * 100) + 1))))then
-//        begin
-//          SetFontSize(10);
-//          TextOut(200,200,'WARRING!');
-//          Sleep(100000);
-//        end;
-        //SetFontSize(10);
-        //TextOut(200,200,'WARRING!');
+        if(sum >= (area - 100)) then
+        begin
+                number := Min(number,l);
+                counter_22 := 1;
+        end;
+        Print(counter_22);
+                                //        var c: Color := RGB(Random(0,255),Random(0,255),Random(0,255));
+                                //        for var ii:=1 to l do
+                        //        begin
+                        //          SetBrushColor(c);
+                        //          Circle(animal[ii][1], animal[ii][2], 3);
+                        //        end;
+                //        Print(sum / area() * 100, sum, area);
+        //        if((1000 / (l * (100 - (sum / areas * 100) + 1))) = (1000 / (l * (100 - (areas / areas * 100) + 1))))then
+        //        begin
+        //          SetFontSize(10);
+        //          TextOut(200,200,'WARRING!');
+        //          Sleep(100000);
+        //        end;
+                //SetFontSize(10);
+                //TextOut(200,200,'WARRING!');
         result := 1000 / (l * (100 - (sum / areas * 100) + 1));
 end;
 
@@ -345,8 +351,8 @@ end;
 procedure MouseDown(x, y, mb: integer);
 begin
         //рисуем стены комнаты
-        zxzxzxzxzxz+=1;
-        TextOut(0,0,zxzxzxzxzxz);
+        zxzxzxzxzxz += 1;
+        TextOut(0, 0, zxzxzxzxzxz);
         var counter: int64;
         for var u := 1 to num_of_walls - 3 do
         begin
@@ -363,6 +369,7 @@ begin
                         begin
                                 LineTo(i[1][1], i[2][1]);
                                 y_n := 2;
+                                max_of_guards := Ceil(num_of_walls / 3);
                         end
                         else
                         begin;
@@ -392,42 +399,58 @@ begin
                 var summs, fit: ara;
                 areas := area();
                 y_n += 1;
-                
-                // формируем первую смену охранников случайно внутри комнаты
-                array2random(animals_young, d);
-                
-                // для каждого поколения
-                for var k := 1 to 1000000 do
+                counter_22 := 1;
+                while(counter_22 = 1) do
                 begin
-                        ClearWindow();
-                        // отрисовка стен
-                        MoveTo(i[1][1], i[2][1]);
-                        for var wall := 2 to num_of_walls - 1 do
+                        counter_22 := 0;
+                        // формируем первую смену охранников случайно внутри комнаты
+                        array2random(animals_young, d);
+                        
+                        // для каждого поколения
+                        for var k := 1 to 1000 do
                         begin
-                                Lineto(i[1][wall], i[2][wall]);
+                                ClearWindow();
+                                // отрисовка стен
+                                MoveTo(i[1][1], i[2][1]);
+                                for var wall := 2 to num_of_walls - 1 do
+                                begin
+                                        Lineto(i[1][wall], i[2][wall]);
+                                end;
+                                Lineto(i[1][1], i[2][1]);
+                                Print('Generation number', k);
+                                fitt(animals_young, d, fit, summs, k);
+                                // для каждой смены в поколении
+                                SetBrushColor(clWhite);
+                                //Print(counter_22);
+                                if(counter_22 = 0) then
+                                begin
+                                        for var j := 1 to 6 do
+                                        begin
+                                                //                                Print(d[j]);
+                                                                                // находим маму и папу
+                                                mom := choose_parent(animals_young, 0, d, summs);
+                                                //                                Print(1);
+                                                dad := choose_parent(animals_young, mom, d, summs);
+                                                //                                Print(1);
+                                                crossingover(animals_young[mom], animals_young[dad], new_animals, j, mom, dad, d, d_c);
+                                                //                                Print(1);
+                                        end;
+                                end
+                                else
+                                begin
+                                        Println('find answer for', number, 'guards');
+                                        Println();
+                                        max_of_guards := number -1;
+                                        Sleep(3000);
+                                        break;
+                                end;
+                                //                                                                                                                        SetBrushColor(clWhite);
+                                Println({animals_young{});
+                                //                        Sleep(100000);
+                                // копируем детей в родителей
+                                d := d_c;
+                                animals_young := new_animals;
                         end;
-                        Lineto(i[1][1], i[2][1]);
-                        Print('Generation number', k);
-                        fitt(animals_young, d, fit, summs, k);
-                        // для каждой смены в поколении
-                        SetBrushColor(clWhite);
-                        for var j := 1 to 6 do
-                        begin
-                                //                                Print(d[j]);
-                                                                // находим маму и папу
-                                mom := choose_parent(animals_young, 0, d, summs);
-                                //                                Print(1);
-                                dad := choose_parent(animals_young, mom, d, summs);
-                                //                                Print(1);
-                                crossingover(animals_young[mom], animals_young[dad], new_animals, j, mom, dad, d, d_c);
-                                //                                Print(1);
-                        end;
-                        //                                                                                                                        SetBrushColor(clWhite);
-                        Println({animals_young{});
-                        //                        Sleep(100000);
-                        // копируем детей в родителей
-                        d := d_c;
-                        animals_young := new_animals;
                 end;
         end;
 end;
