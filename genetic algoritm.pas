@@ -257,7 +257,7 @@ begin
                 number := Min(number,l);
                 counter_22 := 1;
         end;
-        Print(counter_22);
+        Print(sum,area);
                                 //        var c: Color := RGB(Random(0,255),Random(0,255),Random(0,255));
                                 //        for var ii:=1 to l do
                         //        begin
