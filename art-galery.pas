@@ -128,7 +128,7 @@ begin
 end;
 
 //удаляем дубликаты
-function delete_doubles(fig : figure; el : int64) : int64;
+function delete_doubles(var fig : figure; el : int64) : int64;
 begin 
     for var i := 1 to el do///идём по добавляемым вершинам
     begin
@@ -440,10 +440,13 @@ begin
             break;
         end;
     end;
-    for var i := 1 to num_vert1 + num_vert2 do
+    //ОБЪЕДИНЕНИЕ
+    direction := 1;//зададим направление вперёд, туда мы пойдём, если не окажемся в пересечении
+    for var i := 1 to num_vert1 + num_vert2 do//идём по пустому массиву объединения
     begin
-        var index_in_fig1, index_in_fig2 : int64;
+        var index_in_fig1, index_in_fig2 : int64;//сопоставляем для одной и той же вершины её номер в одной фигуре и в другой фигуре, эти переменные для результата
         num_points := num_points + 1;
+        //добавляем в объединение
         if in_fig1 then
         begin
             union[1][i] := fig1[1][counter];
@@ -454,40 +457,50 @@ begin
             union[1][i] := fig2[1][counter];
             union[2][i] := fig2[2][counter];
         end;
+        SetBrushColor(clYellow);
+        Circle(Round(union[1][i]), Round(union[2][i]), 7);
+        TextOut(Round(union[1][i]), Round(union[2][i]), i);
+        Sleep(4000);
+        //если точка пересечение
         if (not ((not intersections1[i]) and in_fig1)) and (not ((not intersections2[i]) and (not in_fig1))) then
         begin
+            //сопоставляем для одной и той же вершины её номер в одной фигуре и в другой фигуре
             index_in_fig1 := index(fig1, fig2[1][counter], fig2[2][counter], num_vert1);
-            index_in_fig2 := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2); 
+            index_in_fig2 := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
             //Println('    ', index_in_fig2);
-            if in_fig1 then
+            if in_fig1 then//если в 1-ой фигуре
             begin
-                if index_in_fig2 <= 1 then
+                if index_in_fig2 <= 1 then//обходим эффект круга наоборот
                 begin
+                   //если есть путь по увеличению номера
                     if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 + 1], fig2[2][index_in_fig2 + 1]) then
                     begin
-                        in_fig1 := false;
-                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        in_fig1 := false;//переходим в другую фигуру
+                        counter := index_in_fig2;
                         direction := 1;
                     end
-                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
+                    //если есть путь по уменьшению номера
+                    else if not segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
                     begin
-                        in_fig1 := false;
-                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        in_fig1 := false;//переходим в другую фигуру
+                        counter := index_in_fig2;
                         direction := -1;
                     end;
                 end
                 else
                 begin
+                    //если есть путь по увеличению номера
                     if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 + 1], fig2[2][index_in_fig2 + 1]) then
                     begin
-                        in_fig1 := false;
-                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        in_fig1 := false;//переходим в другую фигуру
+                        counter := index_in_fig2;
                         direction := 1;
                     end
-                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 - 1], fig2[2][index_in_fig2 - 1]) then
+                    //если есть путь по уменьшению номера
+                    else if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 - 1], fig2[2][index_in_fig2 - 1]) then
                     begin
-                        in_fig1 := false;
-                        counter := index(fig2, fig1[1][counter], fig1[2][counter], num_vert2);
+                        in_fig1 := false;//переходим в другую фигуру
+                        counter := index_in_fig2;
                         direction := -1;
                     end;
                 end;
@@ -496,38 +509,43 @@ begin
             begin
                 if index_in_fig1 <= 1 then
                 begin
+                    //если есть путь по увеличению номера
                     if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
                     begin
-                        in_fig1 := true;
+                        in_fig1 := true;//переходим в другую фигуру
                         counter := index_in_fig1;
                         direction := 1;
                     end
-                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
+                    //если есть путь по уменьшению номера
+                    else if not segment_in_figure(fig1, num_vert1, counter, fig2[1][num_vert2], fig2[2][num_vert2]) then
                     begin
-                        in_fig1 := true;
+                        in_fig1 := true;//переходим в другую фигуру
                         counter := index_in_fig1;
                         direction := -1;
                     end;
                 end
                 else
                 begin
-                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
+                    //если есть путь по увеличению номера
+                    if segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
                     begin
-                        in_fig1 := true;
+                        in_fig1 := true;//переходим в другую фигуру
                         counter := index_in_fig1;
                         direction := 1;
                     end
+                    //если есть путь по уменьшению номера
                     else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig1 - 1], fig2[2][index_in_fig1 - 1]) then
                     begin
-                        in_fig1 := true;
+                        in_fig1 := true;//переходим в другую фигуру
                         counter := index_in_fig1;
                         direction := -1;
                     end;
                 end;
             end;
         end;
-        counter := counter + direction;
-        if counter < 1 then
+        Print(counter);
+        counter := counter + direction;//двигаем счётчик
+        if counter < 1 then//нейтрализуем эффект круга
         begin
             if in_fig1 then
                 counter := num_vert1
@@ -536,25 +554,28 @@ begin
         end;
         if ((counter > num_vert1) and in_fig1) or ((counter > num_vert2) and (not in_fig1)) then
             counter := 1;
-        if (counter = start) and in_fig1 and (i <> 1) then
+        if (counter = start) and in_fig1 and (i <> 1) then//если мы пришли в начало, то завершаем обход
             break;
     end;
-    union[1][num_points + 1] := union[1][1];
+    num_points := num_points - delete_doubles(union, num_points);//удаляем повторы
+    union[1][num_points + 1] := union[1][1];//замыкаем объединение
     union[2][num_points + 1] := union[2][1];
     for var i := 1 to num_points do//отрисовка
     begin
         SetBrushColor(clBlue);
         SetPenColor(clBlue);
-        Circle(Round(union[1][i]), Round(union[2][i]), 5);
         Line(Round(union[1][i]), Round(union[2][i]), Round(union[1][i + 1]), Round(union[2][i + 1]));
-    end; 
+        //TextOut(Round(union[1][i]), Round(union[2][i]), i);
+        //Println(union[1][i], union[2][i]);
+        Circle(Round(union[1][i]), Round(union[2][i]), 5);
+    end;
     for var i := 1 to num_add do
     begin
         SetBrushColor(clRed);
         SetPenColor(clRed);
         Circle(Round(add[1][i]), Round(add[2][i]), 3)
     end;
-    Print(num_points);
+    //Print(num_points);
  end;
 
 { ************************  векторное пересечение   *******************************************} 
@@ -866,14 +887,15 @@ begin
                                 SetBrushColor(ARGB(0,0,0,0));
                                 Line(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), Round(sort_intersections_global[i][1][j + 1]), Round(sort_intersections_global[i][2][j + 1]));
                                 Circle(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), 5);
-                                TextOut(Round(sort_intersections_global[i][1][j])+3, round(sort_intersections_global[i][2][j]), j);
+                                //TextOut(Round(sort_intersections_global[i][1][j])+3, round(sort_intersections_global[i][2][j]), j);
                                 {Print(sort_intersections_global[i][1][j]);
                                 Print(sort_intersections_global[i][2][j]);}
                         end;
                         Line(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), Round(sort_intersections_global[i][1][1]), Round(sort_intersections_global[i][2][1]));
                         Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
-                        TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]])+3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
+                        //TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]])+3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
                 end;
+                //Sleep(2500);
                 Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[100], sort_number_global[1], sort_number_global[2], sort_number_global[100]);
 //                var xxx, yyy: real;
 //                for var i := 1 to l - 1 do
