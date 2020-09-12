@@ -242,24 +242,21 @@ begin
     place_insert[num_insert + 1] := prom;
 end;
 
-function segment_in_figure(fig : figure; num_vert, point_index : int64; x, y : real) : boolean;
-var was_intersection : boolean;
-begin
-    was_intersection := false;
-    for var i := 1 to num_vert do
-    begin
-        if get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1)) and (not ((point_index = 1) and (i = num_vert))) then
-            was_intersection := true
-    end;
-    Result := was_intersection or in_or_out2(x, y, num_vert, fig);
-end;
-
-procedure insert_intersections(var fig1, fig2 : figure; var num_vert1, num_vert2 : int64; intersections1, intersections2 : booleans);//вставляет в стороны обоих фигур их пересечения
+procedure insert_intersections(var fig1, fig2 : figure; var num_vert1, num_vert2 : int64; var intersections1, intersections2 : booleans);
+var add, place_add : figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
+//var : array [1.. 100000] of int64;
+var num_add : int64;//num_points : длина массива intersections, num_add : длина массива add
 begin 
     fig1[1][num_vert1 + 1] := fig1[1][1];//замыкаем фигуры
     fig2[1][num_vert2 + 1] := fig2[1][1];
     fig1[2][num_vert1 + 1] := fig1[2][1];
     fig2[2][num_vert2 + 1] := fig2[2][1];
+    {points := fig1;
+    for var i := 1 to num_vert2 do
+    begin
+        points[1][i + num_vert1] := fig2[1][i];
+        points[2][i + num_vert1] := fig2[2][i];
+    end;}
     //начинаем искать коорднаты пересечений
     for var i :=  1 to num_vert1 do
     begin
@@ -269,59 +266,39 @@ begin
     begin
         intersections2[i] := false
     end;
-    for var i1 := 1 to num_vert1 * 2 do//идём по первой фигуре
+    for var i1 := 1 to num_vert1 do//идём по первой фигуре
     begin
-        for var i2 := 1 to num_vert2 * 2 do//идём по второй фигуре
+        for var i2 := 1 to num_vert2 do//идём по второй фигуре
         begin
             var x, y : real;//пересечение линий (которые являются продолжениями сторон)
             intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1], x, y);
             //проверяем пересекаются ли отрезки
-            if (get_line_intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1]) or (points_dist(x, y, fig2[1][i2 + 1], fig2[2][i2 + 1]) < 1) or (points_dist(x, y, fig2[1][i2], fig2[2][i2]) < 1) or (points_dist(x, y, fig1[1][i1 + 1], fig1[2][i1 + 1]) < 1) or (points_dist(x, y, fig1[1][i1], fig1[2][i1]) < 1)) and (x / x = 1) and (not intersections1[i1]) and (not intersections2[i2]) then
+            if (get_line_intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1]) or (points_dist(x, y, fig2[1][i2 + 1], fig2[2][i2 + 1]) < 1) or (points_dist(x, y, fig2[1][i2], fig2[2][i2]) < 1) or (points_dist(x, y, fig1[1][i1 + 1], fig1[2][i1 + 1]) < 1) or (points_dist(x, y, fig1[1][i1], fig1[2][i1]) < 1)) and (x / x = 1) then
             begin
-                fig1[1][num_vert1 + 1] := x;//вначале поставим его на последнее место
-                fig2[1][num_vert2 + 1] := y;
-                fig1[2][num_vert1 + 1] := x;
-                fig2[2][num_vert2 + 1] := y;
-                intersections1[num_vert1 + 1] := true;//и скажем, что это пересечение
-                intersections2[num_vert2 + 1] := true;
-                num_vert1 := num_vert1 + 1;//увеличим кол-во вершин на 1
-                num_vert2 := num_vert2 + 1;
-                insert(Round(i1 + 1), num_vert1, fig1);//перенесём в нужное место координаты точки и соответствующий ей boolean
-                insert(Round(i2 + 1), num_vert2, fig2);
-                insert_boolean(Round(i1 + 1), num_vert1, intersections1);
-                insert_boolean(Round(i2 + 1), num_vert2, intersections2);
-                //идём по добавлемым точкам, чтобы обратить последствия сдивга во время вставления
+                add[1][num_add + 1] := x;//заносим пересечение в add
+                add[2][num_add + 1] := y;
+                place_add[1][num_add + 1] := i1;//заносим место куда вставить в place_add
+                place_add[2][num_add + 1] := i2;
+                num_add := num_add + 1;//увеличиваем кол-во пересечений на 1
+                //Println(Round(x), Round(y), i1, i2);
             end;
         end;
     end;
     //удаляем дубликаты
-    for var i := 1 to num_vert1 do///идём по добавляемым вершинам
+    for var i := 1 to num_add do///идём по добавляемым вершинам
     begin
-        for var j := 1 to num_vert1 do///снова идём по добавляемым вершинам
+        for var j := 1 to num_add do///снова идём по добавляемым вершинам
         begin
-            if (Abs(fig1[1][i] - fig1[1][j]) < 1) and (Abs(fig1[2][i] - fig1[2][j]) < 1) and not (i = j) then
+            if (Abs(add[1][i] - add[1][j]) < 1) and (Abs(add[2][i] - add[2][j]) < 1) and not (i = j) then
             begin 
-                fig1[1][Max(i, j)] := -1;
-                fig1[2][Max(i, j)] := -1;
+                add[1][Max(i, j)] := -1;
+                add[2][Max(i, j)] := -1;
             end;
         end;
     end;
-    num_vert1 := num_vert1 - delete_bad(fig2, num_vert2);//само удаление
-    //удаляем дубликаты
-    for var i := 1 to num_vert2 do///идём по добавляемым вершинам
-    begin
-        for var j := 1 to num_vert2 do///снова идём по добавляемым вершинам
-        begin
-            if (Abs(fig2[1][i] - fig2[1][j]) < 1) and (Abs(fig2[2][i] - fig2[2][j]) < 1) and not (i = j) then
-            begin 
-                fig1[1][Max(i, j)] := -1;
-                fig1[2][Max(i, j)] := -1;
-            end;
-        end;
-    end;
-    num_vert2 := num_vert2 - delete_bad(fig2, num_vert2);//само удаление
+    num_add := num_add - delete_bad2(add, place_add, num_add);//само удаление
     //удаляем те точки, которые не лежат на сторонах фигуры 1
-    {for var vert := num_add downto 1 do
+    for var vert := num_add downto 1 do
     begin
         var bad_vert : boolean;//плохая ли вершина
         bad_vert := true;//до проверки она плохая
@@ -358,7 +335,31 @@ begin
             delete2(add, num_add, vert);
             num_add := num_add - 1;
         end;
-    end;}
+    end;
+    //вставляем пересечения в фигуры
+    for var i := 1 to num_add do
+    begin
+        fig1[1][num_vert1 + 1] := add[1][i];//вначале поставим его на последнее место
+        fig2[1][num_vert2 + 1] := add[1][i];
+        fig1[2][num_vert1 + 1] := add[2][i];
+        fig2[2][num_vert2 + 1] := add[2][i];
+        intersections1[num_vert1 + 1] := true;//и скажем, что это пересечение
+        intersections2[num_vert2 + 1] := true;
+        num_vert1 := num_vert1 + 1;//увеличим кол-во вершин на 1
+        num_vert2 := num_vert2 + 1;
+        insert(Round(place_add[1][i] + 1), num_vert1, fig1);//перенесём в нужное место координаты точки и соответствующий ей boolean
+        insert(Round(place_add[2][i] + 1), num_vert2, fig2);
+        insert_boolean(Round(place_add[1][i] + 1), num_vert1, intersections1);
+        insert_boolean(Round(place_add[2][i] + 1), num_vert2, intersections2);
+        //идём по добавлемым точкам, чтобы обратить последствия сдивга во время вставления
+        for var j := 1 to num_add do
+        begin
+            if (place_add[1][j] > place_add[1][i]) and (j > i) then//если точку надо втавить позже, и мы её ещё не вставили...
+                place_add[1][j] := place_add[1][j] + 1;
+            if (place_add[2][j] > place_add[2][i]) and (j > i) then//если точку надо втавить позже, и мы её ещё не вставили...
+                place_add[2][j] := place_add[2][j] + 1;
+        end;
+    end;
     fig1[1][num_vert1 + 1] := fig1[1][1];//снова замыкаем фигуры
     fig2[1][num_vert2 + 1] := fig2[1][1];
     fig1[2][num_vert1 + 1] := fig1[2][1];
@@ -404,27 +405,39 @@ begin
             end;
         end;
     end;
+    for var i := 1 to num_add do
+    begin
+        SetBrushColor(clRed);
+        SetPenColor(clRed);
+        Circle(Round(add[1][i]), Round(add[2][i]), 3)
+    end;
 end;
- 
-function Union_figures(figure1, figure2 : figure; var union : figure; num_vertex1, num_vertex2, num_points : int64) : boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
-var direction, start, counter, num_vert1, num_vert2 : int64;
+
+function segment_in_figure(fig : figure; num_vert, point_index : int64; x, y : real) : boolean;
+var was_intersection : boolean;
+begin
+    was_intersection := false;
+    for var i := 1 to num_vert do
+    begin
+        if get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1)) and (not ((point_index = 1) and (i = num_vert))) then
+            was_intersection := true
+    end;
+    Result := was_intersection or in_or_out2(x, y, num_vert, fig);
+end;
+
+function Union_figures(var figure1, figure2, union : figure; var num_vertex1, num_vertex2, num_points : int64) : boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
+var counter, start, direction, num_vert1, num_vert2 : int64;
 var intersections1, intersections2 : booleans;
-var fig1, fig2 : figure;
 var in_fig1 : boolean;
+var fig1, fig2 : figure;
 begin
     fig1 := figure1;
     fig2 := figure2;
     num_vert1 := num_vertex1;
     num_vert2 := num_vertex2;
     insert_intersections(fig1, fig2, num_vert1, num_vert2, intersections1, intersections2);
-    if num_vert1 = num_vertex1 then
-    begin
-        Result := false;
-        exit;
-    end;
-    Result := true;
+    //ОБЪЕДИНЕНИЕ
     direction := 1;//зададим направление вперёд, туда мы пойдём, если не окажемся в пересечении
-    in_fig1 := true;
     for var i := 1 to num_vert1 do
     begin
         if not in_or_out2(fig1[1][i], fig1[2][i], num_vert2, fig2) then
@@ -433,7 +446,7 @@ begin
             break;
         end;
     end;
-    //ОБЪЕДИНЕНИE
+    start := counter;
     for var i := 1 to num_vert1 + num_vert2 do//идём по пустому массиву объединения
     begin
         var index_in_fig1, index_in_fig2 : int64;//сопоставляем для одной и той же вершины её номер в одной фигуре и в другой фигуре, эти переменные для результата
@@ -449,10 +462,6 @@ begin
             union[1][i] := fig2[1][counter];
             union[2][i] := fig2[2][counter];
         end;
-        {SetBrushColor(clYellow);
-        Circle(Round(union[1][i]), Round(union[2][i]), 7);
-        TextOut(Round(union[1][i]), Round(union[2][i]), i);
-        Sleep(4000);///мультик-отрисрвка}
         //если точка пересечение
         if (not ((not intersections1[i]) and in_fig1)) and (not ((not intersections2[i]) and (not in_fig1))) then
         begin
@@ -462,7 +471,7 @@ begin
             //Println('    ', index_in_fig2);
             if in_fig1 then//если в 1-ой фигуре
             begin
-                if index_in_fig2 = 1 then//обходим эффект круга наоборот
+                if index_in_fig2 <= 1 then//обходим эффект круга наоборот
                 begin
                    //если есть путь по увеличению номера
                     if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig2 + 1], fig2[2][index_in_fig2 + 1]) then
@@ -499,7 +508,7 @@ begin
             end
             else
             begin
-                if index_in_fig1 = 1 then
+                if index_in_fig1 <= 1 then
                 begin
                     //если есть путь по увеличению номера
                     if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
@@ -519,14 +528,14 @@ begin
                 else
                 begin
                     //если есть путь по увеличению номера
-                    if not segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
+                    if segment_in_figure(fig2, num_vert2, counter, fig1[1][index_in_fig1 + 1], fig1[2][index_in_fig1 + 1]) then
                     begin
                         in_fig1 := true;//переходим в другую фигуру
                         counter := index_in_fig1;
                         direction := 1;
                     end
                     //если есть путь по уменьшению номера
-                    else if not segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig1 - 1], fig2[2][index_in_fig1 - 1]) then
+                    else if segment_in_figure(fig1, num_vert1, counter, fig2[1][index_in_fig1 - 1], fig2[2][index_in_fig1 - 1]) then
                     begin
                         in_fig1 := true;//переходим в другую фигуру
                         counter := index_in_fig1;
@@ -535,7 +544,7 @@ begin
                 end;
             end;
         end;
-        //Print(counter);
+        Print(counter);
         counter := counter + direction;//двигаем счётчик
         if counter < 1 then//нейтрализуем эффект круга
         begin
@@ -562,7 +571,7 @@ begin
         Circle(Round(union[1][i]), Round(union[2][i]), 5);
     end;
     //Print(num_points);
-end;
+ end;
 
 { ************************  векторное пересечение   *******************************************} 
 function vector_multiplicator(vek1_x, vek1_y, vek2_x, vek2_y: int64): int64;
