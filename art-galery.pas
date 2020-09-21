@@ -247,7 +247,8 @@ begin
     place_insert[num_insert + 1] := prom;
 end;
 
-procedure draw_figure(room : figure; n : int64);//рисует фигуру по массиву, используя первые n элементов и нумерует вершины
+//рисует фигуру по массиву, используя первые n элементов и нумерует вершины
+procedure draw_figure(room : figure; n : int64);
 begin 
     for var i := 1 to n - 1 do
     begin
@@ -258,11 +259,23 @@ begin
     end;    
     Line(Round(room[1][n]), Round(room[2][n]), Round(room[1][1]), Round(room[2][1]));
     Circle(Round(room[1][n]), Round(room[2][n]), 10);
-    TextOut(Round(room[1][n]), Round(room[2][n]), i);
+    TextOut(Round(room[1][n]), Round(room[2][n]), n);
     Sleep(2000);
 end;
 
-procedure insert_intersections(var fig1, fig2: figure; var num_vert1, num_vert2: int64; var intersections1, intersections2: booleans);
+function segment_in_figure(fig: figure; num_vert, point_index: int64; x, y: real): boolean;
+var
+    was_intersection: boolean;
+begin
+    for var i := 1 to num_vert do
+    begin
+        if get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1)) and (not ((point_index = 1) and (i = num_vert))) then
+            was_intersection := true
+    end;
+    Result := was_intersection or in_or_out2(x, y, num_vert, fig);
+end;
+
+{procedure insert_intersections(var fig1, fig2: figure; var num_vert1, num_vert2: int64; var intersections1, intersections2: booleans);
 var
     add, place_add: figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
 var
@@ -420,24 +433,9 @@ begin
         SetPenColor(clRed);
         Circle(Round(add[1][i]), Round(add[2][i]), 3);
     end;
-    
     draw_figure(fig1, num_vert1);
     SetPenColor(clGreen);
     draw_figure(fig2, num_vert2);
-    
-    
-end;
-
-function segment_in_figure(fig: figure; num_vert, point_index: int64; x, y: real): boolean;
-var
-    was_intersection: boolean;
-begin
-    for var i := 1 to num_vert do
-    begin
-        if get_line_intersection(fig[1][i], fig[2][i], fig[1][i + 1], fig[2][i + 1], fig[1][point_index], fig[2][point_index], x, y) and (not (i = point_index)) and (not (i = point_index - 1)) and (not ((point_index = 1) and (i = num_vert))) then
-            was_intersection := true
-    end;
-    Result := was_intersection or in_or_out2(x, y, num_vert, fig);
 end;
 
 function Union_figures(var figure1, figure2, union: figure; var num_vertex1, num_vertex2, num_points: int64): boolean;//объединяет фигуры (figure1 и figure2) и кладёт объединение в union (если фигуры не пересекаются выдает false)
@@ -600,7 +598,7 @@ begin
     SetPenColor(clBlue);
     //draw_figure(union, num_points);
     //Print(num_points);
-end;
+end;}
 
 { ************************  векторное пересечение   *******************************************} 
 function vector_multiplicator(vek1_x, vek1_y, vek2_x, vek2_y: int64): int64;
