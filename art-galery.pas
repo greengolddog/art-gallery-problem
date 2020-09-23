@@ -6,6 +6,9 @@ type
 type
     booleans = array [1..100000] of boolean;
 
+type
+    triangulation = array [1.. 100000] of figure;
+
 var
     a: array[1..67]of Color;//цвета для охранников
 
@@ -273,6 +276,45 @@ begin
             was_intersection := true
     end;
     Result := was_intersection or in_or_out2(x, y, num_vert, fig);
+end;
+
+function good_triangle(start_point, num_vert : int64; fig1 : figure) : boolean;
+begin
+    Result := true;
+    for var i := 1 to num_vert do
+    begin
+        if get_line_intersection(fig1[1][i], fig1[2][i], fig1[1][(i + 1) mod num_vert], fig1[2][(i + 1) mod num_vert], fig1[1][start_point], fig1[2][start_point], fig1[1][(start_point + 2) mod num_vert], fig1[2][(start_point + 2) mod num_vert]) and not ((i = start_point - 1) or ((i = num_vert) and (start_point = 1)) or (i = start_point) or (i = (start_point + 1) mod num_vert) or (i = (start_point + 2) mod num_vert)) then
+        begin
+            Result := false;
+            exit;
+        end;
+    end;
+    if in_or_out2((fig1[1][start_point] + fig1[1][(start_point + 2) mod num_vert]) / 2, (fig1[2][start_point] + fig1[2][(start_point + 2) mod num_vert]) / 2, num_vert, fig1) then
+        Result := false
+end; 
+
+procedure triangulate(fig1 : figure; num_vert, done : int64;var tring : triangulation);
+begin 
+    if num_vert = 3 then
+        tring[done + 1] := fig1
+    else
+    begin
+        for var i := 1 to num_vert do
+        begin
+            if good_triangle(i, num_vert, fig1) then
+            begin
+                delete2(fig1, num_vert, (i + 1) mod num_vert);
+                tring[done + 1][1][1] := fig1[1][i];
+                tring[done + 1][1][1] := fig1[2][i];
+                tring[done + 1][1][1] := fig1[1][(i + 1) mod num_vert];
+                tring[done + 1][1][1] := fig1[2][(i + 1) mod num_vert];
+                tring[done + 1][1][1] := fig1[1][(i + 2) mod num_vert];
+                tring[done + 1][1][1] := fig1[2][(i + 2) mod num_vert];
+                draw_figure(tring[done + 1], 3);
+                triangulate(fig1, num_vert - 1, done + 1, tring)
+            end;
+        end; 
+    end;
 end;
 
 {procedure insert_intersections(var fig1, fig2: figure; var num_vert1, num_vert2: int64; var intersections1, intersections2: booleans);
@@ -917,7 +959,9 @@ begin
             Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
             //TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]])+3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
         end;
-        Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2], sort_number_global[1000])
+        var tring : triangulation;
+        triangulate(sort_intersections_global[1], sort_number_global[1], 0, tring)
+        //Union_figures(sort_intersections_global[1], sort_intersections_global[2], sort_intersections_global[1000], sort_number_global[1], sort_number_global[2], sort_number_global[1000])
         //Sleep(2500);
         //                var xxx, yyy: real;
         //                for var i := 1 to l - 1 do
