@@ -1,31 +1,496 @@
 ﻿uses graphABC;
 
-type
-        figure = array [1..2, 1..100000] of real;//фигура
-
-type
-        global = array [1..1000] of figure;
-
-type
-        number = array [1..1000] of int64;
-
-var
-        a: array[1..67]of Color;//цвета для охранников
-
 var
         y_n, f, l, kol, s: int64;
 
 var
-        Gallery, Guards: array [1..2, 0..1000] of int64;
+        Gallery, Guards: array[1..2]of array[0..10000]of int64;
 
-{ ************************  заносим в x y пересечение двух прямых, на которых лежат отрезки. Если пересечения нет - NAN   *******************************************}
+type
+        polygon77 = array [1..2] of real;
+        polygon777 = array [0..1000] of polygon77;
 
-function points_dist(x1, y1, x2, y2: int64): real;//расстояние между двумя точками
+function segment_and_pixel(x, y, x1, x2, y1, y2: real): boolean;
 begin
-        result := Sqrt(Sqr(Abs(x1 - x2)) + Sqr(Abs(y1 - y2)));
+        if ((round(((y1 - y2) * x + (x2 - x1) * y + (x1 * y2 - x2 * y1))) = 0) and ((not (x < x1) and not (x2 < x)) or (not (x < x2) and not (x1 < x))) and ((not (y < y1) and not (y2 < y)) or (not (y < y2) and not (y1 < y)))) then
+                Result := true
+        else 
+                Result := false;
 end;
 
-procedure intersection(x1, y1, x2, y2, x3, y3, x4, y4: real; var x, y: real);
+function segment_and_pixel_2(x, y, x1, y1, x2, y2: real): boolean;
+begin
+        if ((round(((y1 - y2) * x + (x2 - x1) * y + (x1 * y2 - x2 * y1))) = 0) and ((not (x <= x1) and not (x2 <= x)) or (not (x <= x2) and not (x1 <= x))) and ((not (y <= y1) and not (y2 <= y)) or (not (y <= y2) and not (y1 <= y)))) then
+                Result := true
+        else 
+                Result := false;
+end;
+
+function IsRectCross(p11, p12, p21, p22, q11, q12, q21, q22: real): boolean;
+begin
+        var ret: boolean;
+        ret := (min(p11, p21) <= max(q11, q21)) and (min(q11, q21) <= max(p11, p21)) and (min(p12, p22) <= max(q12, q22)) and (min(q12, q22) <= max(p12, p22));
+        result := ret;
+end;
+
+function IsLineSegmentCross(p11, p12, p21, p22, q11, q12, q21, q22: real): boolean;
+begin
+        var line1, line2: real;
+        line1 := p11 * (q12 - p22) + p21 * (p12 - q12) + q11 * (p22 - p12);
+        line2 := p11 * (q22 - p22) + p21 * (p12 - q22) + q21 * (p22 - p12);
+        if ((line1 = line2) and (line1 <> 0) or (line1 <> line2) and ((line1 <> 0) or (line2 <> 0)) and ((line1 * line2) >= 0)) then
+        begin
+                result := false;
+                exit;
+        end;
+        line1 := q11 * (p12 - q22) + q21 * (q12 - p12) + p11 * (q22 - q12);
+        line2 := q11 * (p22 - q22) + q21 * (q12 - p22) + p21 * (q22 - q12);
+        if ((line1 = line2) and (line1 <> 0) or (line1 <> line2) and ((line1 <> 0) or (line2 <> 0)) and ((line1 * line2) >= 0)) then
+        begin;
+                result := false;
+                exit;
+        end;
+        result := true;
+end;
+
+function GetCrossPoint(p11, p12, p21, p22, q11, q12, q21, q22: real; var x, y: real): boolean;
+begin
+        if ((p11 = q11) and (p12 = q12)) then
+        begin
+                x := p11;
+                y := p12;
+                result := true;
+                exit;
+        end;
+        if ((p11 = q21) and (p12 = q22)) then
+        begin
+                x := p11;
+                y := p12;
+                result := true;
+                exit;
+        end;
+        if ((p21 = q11) and (p22 = q12)) then
+        begin
+                x := p21;
+                y := p22;
+                result := true;
+                exit;
+        end;
+        if ((p21 = q21) and (p22 = q22)) then
+        begin
+                x := p21;
+                y := p22;
+                result := true;
+                exit;
+        end;
+        if (IsRectCross(p11, p12, p21, p22, q11, q12, q21, q22)) then
+        begin
+                if (IsLineSegmentCross(p11, p12, p21, p22, q11, q12, q21, q22)) then
+                begin
+                        //求交点
+                        var tmpLeft, tmpRight: real;
+                        tmpLeft := (q21 - q11) * (p12 - p22) - (p21 - p11) * (q12 - q22);
+                        tmpRight := (p12 - q12) * (p21 - p11) * (q21 - q11) + q11 * (q22 - q12) * (p21 - p11) - p11 * (p22 - p12) * (q21 - q11);
+                        if (tmpLeft = 0) then
+                        begin
+                                result := false;
+                                exit;
+                        end;
+                        x := tmpRight / tmpLeft;
+                        tmpLeft := (p11 - p21) * (q22 - q12) - (p22 - p12) * (q11 - q21);
+                        tmpRight := p22 * (p11 - p21) * (q22 - q12) + (q21 - p21) * (q22 - q12) * (p12 - p22) - q22 * (q11 - q21) * (p22 - p12);
+                        if (tmpLeft = 0) then
+                        begin
+                                result := false;
+                                exit;
+                        end;
+                        y := tmpRight / tmpLeft;
+                        result := true;
+                        exit;
+                end;
+        end;
+        result := false;
+end;
+
+function IsPointInPolygon(poly: polygon777; p1, p2: real; size_of_poly: int64): boolean;
+begin
+        var c: boolean;
+        c := false;
+        var j: int64;
+        j := size_of_poly - 1;
+        for var i := 0 to size_of_poly - 1 do
+        begin
+                if ((((poly[i][2] <= p2) and (p2 < poly[j][2])) or ((poly[j][2] <= p2) and (p2 < poly[i][2]))) and (p1 < (poly[j][1] - poly[i][1]) * (p2 - poly[i][2]) / (poly[j][2] - poly[i][2]) + poly[i][1])) then
+                begin
+                        c := not c;
+                end;
+                j := i;
+        end;
+        result := c;
+end;
+
+function IsPointInPolygon2(poly: polygon777; p1, p2: real; size_of_poly: int64): boolean;
+begin
+        var c: boolean;
+        c := false;
+        var j: int64;
+        j := size_of_poly - 1;
+        for var i := 0 to size_of_poly - 1 do
+        begin
+                if ((((poly[i][2] <= p2) and (p2 < poly[j][2])) or ((poly[j][2] <= p2) and (p2 < poly[i][2]))) and (p1 < (poly[j][1] - poly[i][1]) * (p2 - poly[i][2]) / (poly[j][2] - poly[i][2]) + poly[i][1])) then
+                begin
+                        c := not c;
+                end;
+                if (segment_and_pixel(p1, p2, poly[i][1], poly[i][2], poly[j][1], poly[j][2]))  then
+                begin
+                  Result := false;
+                  exit;
+                end;
+                j := i;
+        end;
+        result := c;
+end;
+
+function segment_in_figure_2(var fig: polygon777; num_vert: int64; x1, y1, x2, y2: real): boolean;
+begin
+        var was_intersection1, was_intersection2: boolean;
+        var j: int64;
+        j := num_vert - 1;
+        for var i := 0 to num_vert - 1 do
+        begin
+                if (segment_and_pixel(x1, y1, fig[i][1], fig[j][1], fig[i][2], fig[j][2])) then
+                begin
+                        was_intersection1 := true;
+                        if (segment_and_pixel(x2, y2, fig[i][1], fig[j][1], fig[i][2], fig[j][2])) then
+                        begin
+                                was_intersection2 := true;
+                                //                                Println(1);
+                                                                //                                SetPenColor(clRed);
+                                                                //                                Line(Round(x1),Round(y1),Round(x2),Round(y2));
+                                                                //                                Sleep(1000);
+                                Result := false;
+                                //                                SetPenColor(clGreen);
+                                exit;
+                        end;
+                end
+                else
+                begin
+                        if (segment_and_pixel(x2, y2, fig[i][1], fig[j][1], fig[i][2], fig[j][2])) then
+                        begin
+                                was_intersection2 := true;
+                        end;
+                end;
+                //                Println(i,was_intersection1,was_intersection2,x1,y1,x2,y2, fig[i][1],fig[i][2], i1, i2);
+                j := i;
+        end;
+        //        Println(i1,2);
+        //        Circle(Round((x1+x2)/2),Round((y1+y2)/2),5);
+        Result := was_intersection1 and was_intersection2 and IsPointInPolygon2(fig, (x1 + x2) / 2, (y1 + y2) / 2, num_vert);
+end;
+
+function PointCmp(p11, p12, p21, p22, center1, center2: real): boolean;
+begin
+        var det: real;
+        det := (p11 - center1) * (p22 - center2) - (p21 - center1) * (p12 - center2);
+        if (det < 0) then
+        begin
+                Result := true;
+                exit;
+        end;
+        if (det > 0) then
+        begin
+                result := false;
+                exit;
+        end;
+        if ((p11 = center1) and (p12 = center2)) then
+        begin
+                result := false;
+                exit;
+        end;
+        if ((p21 = center1) and (p22 = center2)) then
+        begin
+                result := true;
+                exit;
+        end;
+        result := ((p11 > p21) or (p12 > p22));
+end;
+
+procedure ClockwiseSortPoints(var poly, poly1, poly2: polygon777; var size_of_poly, size_of_poly1, size_of_poly2: int64);
+begin
+        var j, stc: int64;
+        var poly_not_normal_2, poly_not_normal, sort_poly: polygon777;
+        var size_of_poly_not_normal_2, size_of_poly_not_normal, size_of_sort_poly: int64;
+        j := size_of_poly1 - 1;
+        //        SetPenWidth(3);
+        //        SetPenColor(clGold);
+        for var i := 0 to size_of_poly1 - 1 do
+        begin
+                //                Println(poly1[i],poly1[j]);
+                                //                if (not segment_in_figure_2(poly2, size_of_poly2, poly1[i][1], poly1[i][2], poly1[j][1], poly1[j][2])) then
+                                //                begin
+                                                        //                        Println(1);
+                poly_not_normal[size_of_poly_not_normal * 2] := poly1[i];
+                poly_not_normal[size_of_poly_not_normal * 2 + 1] := poly1[j];
+                size_of_poly_not_normal += 1; 
+                //                end;
+                j := i;
+        end;
+        j := size_of_poly2 - 1;
+        for var i := 0 to size_of_poly2 - 1 do
+        begin
+                //                Println(poly2[i],poly2[j]);
+                                //                if (not segment_in_figure_2(poly1, size_of_poly1, poly2[i][1], poly2[i][2], poly2[j][1], poly2[j][2])) then
+                                //                begin
+                poly_not_normal[size_of_poly_not_normal * 2] := poly2[i];
+                poly_not_normal[size_of_poly_not_normal * 2 + 1] := poly2[j];
+                size_of_poly_not_normal += 1;
+                //                end;
+                j := i;
+        end;
+                //        Print(poly_not_normal,poly1,poly2);
+        //        SetPenColor(clGreen);
+        if (1 = 1) then
+        begin
+                var i: int64;
+                i := -1;
+                while(i <= size_of_poly_not_normal) do
+                begin
+                        //          Line(Round(poly_not_normal[i*2][1]),Round(poly_not_normal[i*2][2]),Round(poly_not_normal[i*2+1][1]),Round(poly_not_normal[i*2+1][2]));
+                        i += 1;
+                        for var k := 0 to size_of_poly - 1 do
+                        begin
+                                if (segment_and_pixel_2(poly[k][1], poly[k][2], poly_not_normal[i * 2][1], poly_not_normal[i * 2][2], poly_not_normal[i * 2 + 1][1], poly_not_normal[i * 2 + 1][2])) then
+                                begin
+                                        //              Println(1);
+                                        poly_not_normal[size_of_poly_not_normal * 2] := poly_not_normal[i * 2];
+                                        poly_not_normal[size_of_poly_not_normal * 2 + 1] := poly[k];
+                                        size_of_poly_not_normal += 1; 
+                                        poly_not_normal[i * 2] := poly[k];
+                                end
+                        end;
+//                        SetPenColor(clRed);
+//                                        Line(Round(poly_not_normal[i * 2][1]), Round(poly_not_normal[i * 2][2]), Round(poly_not_normal[i * 2 + 1][1]), Round(poly_not_normal[i * 2 + 1][2]));
+                end;
+        end;
+        for var i := 0 to size_of_poly_not_normal do
+        begin
+                if ((not segment_in_figure_2(poly1, size_of_poly1, poly_not_normal[i * 2][1], poly_not_normal[i * 2][2], poly_not_normal[i * 2 + 1][1], poly_not_normal[i * 2 + 1][2])) and (not segment_in_figure_2(poly2, size_of_poly2, poly_not_normal[i * 2][1], poly_not_normal[i * 2][2], poly_not_normal[i * 2 + 1][1], poly_not_normal[i * 2 + 1][2]))) then
+                begin
+                        poly_not_normal_2[size_of_poly_not_normal_2 * 2] := poly_not_normal[i * 2];
+                        poly_not_normal_2[size_of_poly_not_normal_2 * 2 + 1] := poly_not_normal[i * 2 + 1];       
+                        SetPenColor(clRed);
+                        Line(Round(poly_not_normal_2[size_of_poly_not_normal_2 * 2][1]), Round(poly_not_normal_2[size_of_poly_not_normal_2 * 2][2]), Round(poly_not_normal_2[size_of_poly_not_normal_2 * 2 + 1][1]), Round(poly_not_normal_2[size_of_poly_not_normal_2 * 2 + 1][2]));
+                        size_of_poly_not_normal_2 += 1;
+                 end
+        end;
+//        Println(poly_not_normal);
+        sort_poly[0][1] := poly[0][1];
+        sort_poly[0][2] := poly[0][2];
+        size_of_sort_poly := 1;
+        Print(poly[0]);
+        var c: int64;
+        Print(1);
+//        Sleep(1000);
+        while (true) do // 
+        begin
+                for var i := 0 to size_of_poly - 1 do
+                begin
+                        for var k := 0 to size_of_poly_not_normal_2 do
+                        begin
+                                if (((poly[i] = poly_not_normal_2[k * 2]) and (sort_poly[size_of_sort_poly - 1] = poly_not_normal_2[k * 2 + 1])) or ((poly[i] = poly_not_normal_2[k * 2 + 1]) and (sort_poly[size_of_sort_poly - 1] = poly_not_normal_2[k * 2]))) then
+                                begin
+                                        if (size_of_sort_poly >= 2) then
+                                        begin
+                                                if ((poly[i] <> sort_poly[size_of_sort_poly - 2]) and  (poly[i] <> sort_poly[size_of_sort_poly - 1])) then
+                                                begin
+                                                        Print(poly[i]);
+                                                        sort_poly[size_of_sort_poly] := poly[i];
+                                                        size_of_sort_poly += 1;
+                                                        if (Round(poly[i][1] - sort_poly[0][1]) = 0) and (Round(poly[i][2] - sort_poly[0][2]) = 0) then
+                                                        begin
+                                                                stc := 1;
+                                                        end;
+                                                        for var l := i to size_of_poly - 2 do
+                                                        begin
+                                                                poly[l] := poly[l + 1];
+                                                        end;
+                                                        size_of_poly -= 1;
+                                                        SetPenWidth(size_of_sort_poly);
+                                                        SetPenColor(clBlue);
+                                                        Line(Round(poly_not_normal_2[k * 2 + 1][1]), Round(poly_not_normal_2[k * 2 + 1][2]), Round(poly_not_normal_2[k * 2][1]), Round(poly_not_normal_2[k * 2][2]));
+                                                        Sleep(100);
+                                                        Print(i);
+                                                        c := 1;
+                                                        break;
+                                                end;
+                                        end
+                                        else
+                                        begin
+                                                sort_poly[size_of_sort_poly] := poly[i];
+                                                size_of_sort_poly += 1;
+                                                for var l := i to size_of_poly - 2 do
+                                                begin
+                                                        poly[l] := poly[l + 1];
+                                                end;
+                                                size_of_poly -= 1;
+                                                SetPenWidth(size_of_sort_poly);
+                                                SetPenColor(clBlue);
+                                                Line(Round(poly_not_normal_2[k * 2 + 1][1]), Round(poly_not_normal_2[k * 2 + 1][2]), Round(poly_not_normal_2[k * 2][1]), Round(poly_not_normal_2[k * 2][2]));
+                                                Sleep(100);
+                                                Print(i);
+                                                c := 1;
+                                                break;
+                                        end;
+                                end;
+                                if (c = 1) then
+                                begin
+                                        break;
+                                end;
+                        end;
+                        if (c = 1) then
+                        begin
+                                c := 0;
+                                break;
+                        end;
+                end;
+                if (stc = 1) then
+                begin
+                        break;
+                end;
+        end;
+        poly := sort_poly;
+        size_of_poly := size_of_sort_poly;
+end;
+
+function PolygonUnion(var poly1, poly2, interpoly: polygon777; var size_of_poly1, size_of_poly2, size_of_interpoly: int64): boolean;
+begin
+        if ((size_of_poly1 < 3) or (size_of_poly2 < 3)) then
+        begin
+                result := false;
+                exit;
+        end;
+        var x, y: real;
+        for var i := 0 to size_of_poly1 - 1 do
+        begin
+                var poly1_next_idx: int64;
+                poly1_next_idx := (i + 1) mod size_of_poly1;
+                for var j := 0 to size_of_poly2 - 1 do
+                begin
+                        var poly2_next_idx: int64;
+                        poly2_next_idx := (j + 1) mod size_of_poly2;
+                        if (GetCrossPoint(poly1[i][1], poly1[i][2], poly1[poly1_next_idx][1], poly1[poly1_next_idx][2], poly2[j][1], poly2[j][2], poly2[poly2_next_idx][1], poly2[poly2_next_idx][2], x, y)) then
+                        begin
+                                interpoly[size_of_interpoly][1] := x;
+                                interpoly[size_of_interpoly][2] := y;
+                                size_of_interpoly += 1;
+                                //                                Println(x, y);
+                        end;
+                end;
+        end;
+        Print(6);
+        var hasNoCrossPoint: boolean;
+        hasNoCrossPoint := (size_of_interpoly = 0);
+        //        Print(size_of_interpoly);
+        for var i := 0 to size_of_interpoly - 1 do
+        begin
+                for var j := 0 to size_of_interpoly - 2 - i do
+                begin
+                        if ((interpoly[j][1] > interpoly[j + 1][1]) or (interpoly[j][2] > interpoly[j + 1][2])) then
+                        begin
+                                Swap(interpoly[j][1], interpoly[j + 1][1]);
+                                Swap(interpoly[j][2], interpoly[j + 1][2]);
+                        end;
+                end;
+        end;
+        //        Print(interpoly);
+        //        for var j := 0 to size_of_interpoly - 1 do
+        //        begin
+        //                Circle(Round(interpoly[j][1]),Round(interpoly[j][2]),5);
+        //                TextOut(Round(interpoly[j][1]),Round(interpoly[j][2]),j);
+        //        end;
+        for var i := 0 to size_of_interpoly - 1 do
+        begin
+                for var j := i + 1 to size_of_interpoly - 1 do
+                begin
+                        if ((interpoly[j][1] = interpoly[i][1]) and (interpoly[j][2] = interpoly[i][2])) then
+                        begin
+                                for var z := i to size_of_interpoly - 2 do
+                                begin
+                                        interpoly[z] := interpoly[z + 1];
+                                end;
+                                size_of_interpoly -= 1;
+                                interpoly[size_of_interpoly][1] := 0;
+                                interpoly[size_of_interpoly][2] := 0;
+                        end;
+                end;
+        end;
+        //        Println(size_of_interpoly,interpoly);
+        SetBrushColor(clRed);
+                //        for var j := 0 to size_of_interpoly - 1 do
+                //        begin
+                //                Circle(Round(interpoly[j][1]), Round(interpoly[j][2]), 5);
+                //                TextOut(Round(interpoly[j][1]), Round(interpoly[j][2]), j);
+                //        end;
+        //        SetBrushColor(clBlue);
+        for var i := 0 to size_of_poly1 - 1 do
+        begin
+                if (not IsPointInPolygon(poly2, poly1[i][1], poly1[i][2], size_of_poly2)) then
+                begin
+                        interpoly[size_of_interpoly] := poly1[i];
+                        size_of_interpoly += 1;
+                        //                        Circle(Round(interpoly[size_of_interpoly - 1][1]),Round(interpoly[size_of_interpoly - 1][2]),5);
+                end;
+        end;
+        for var i := 0 to size_of_poly2 - 1 do
+        begin
+                if (not IsPointInPolygon(poly1, poly2[i][1], poly2[i][2], size_of_poly1)) then
+                begin
+                        interpoly[size_of_interpoly] := poly2[i];
+                        size_of_interpoly += 1;
+                        //                        Circle(Round(interpoly[size_of_interpoly - 1][1]),Round(interpoly[size_of_interpoly - 1][2]),5);
+                end;
+        end;
+                //        SetBrushColor(clRed);
+                ////        Println(size_of_interpoly,interpoly);
+        //        for var j := 0 to size_of_interpoly - 1 do
+        //        begin
+        //                Circle(Round(interpoly[j][1]), Round(interpoly[j][2]), 5);
+        //                TextOut(Round(interpoly[j][1]), Round(interpoly[j][2]), j);
+        //        end;
+        //        Print(1);
+        Print(10);
+        if (hasNoCrossPoint) then
+        begin
+                Result := false;
+                exit;
+        end;
+        //        Print(1);
+        ClockwiseSortPoints(interpoly, poly1, poly2, size_of_interpoly, size_of_poly1, size_of_poly2);
+        for var i := 0 to size_of_interpoly - 1 do
+        begin
+                for var j := i + 1 to size_of_interpoly - 1 do
+                begin
+                        if ((interpoly[j][1] = interpoly[i][1]) and (interpoly[j][2] = interpoly[i][2])) then
+                        begin
+                                for var z := i to size_of_interpoly - 2 do
+                                begin
+                                        interpoly[z] := interpoly[z + 1];
+                                end;
+                                size_of_interpoly -= 1;
+                        end;
+                end;
+        end;
+        SetBrushColor(clGreen);
+        for var j := 0 to size_of_interpoly - 1 do
+        begin
+                Circle(Round(interpoly[j][1]), Round(interpoly[j][2]), 5);
+                TextOut(Round(interpoly[j][1]), Round(interpoly[j][2]), j);
+        end;
+        Result := true;        
+end;
+
+{ ************************  заносим в x y пересечение двух прямых, на которых лежат отрезки. Если пересечения нет - NAN   *******************************************}
+procedure intersection(x1, y1, x2, y2, x3, y3, x4, y4: int64; var x, y: real);
 begin
         var u1: real;
         u1 := ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
@@ -33,34 +498,19 @@ begin
         x := x1 + u1 * (x2 - x1);
         y := y1 + u1 * (y2 - y1);
 end;
-
 { ************************  проверяем, лежит ли точка на прямой   *******************************************}
 function line_and_pixel(x, y, x1, x2, y1, y2: real): boolean;
 begin
-        if (round(((y1 - y2) * x + (x2 - x1) * y + (x1 * y2 - x2 * y1))) = 0) then 
+        if(round(((y1 - y2) * x + (x2 - x1) * y + (x1 * y2 - x2 * y1))) = 0) then 
                 Result := true
         else 
                 Result := false;
 end;
-
-{ ************************  проверяем, лежит ли точка на отрезке   *******************************************}
-function segment_and_pixel(x, y, x1, x2, y1, y2: real): boolean;
-begin
-        if ((round(((y1 - y2) * x + (x2 - x1) * y + (x1 * y2 - x2 * y1))) = 0) and ((not (x < x1) and not (x2 < x)) or (not (x < x2) and not (x1 < x))) and ((not (y < y1) and not (y2 < y)) or (not (y < y2) and not (y1 < y)))) then 
-                Result := true
-        else 
-                Result := false;
-end;
-
-{function have_in_Galery(x, y : int64) : boolean;
-begin 
-
-end;}
 
 { ************************  проверяем, пересекаются ли отрезки   *******************************************}
-function get_line_intersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y: real): boolean;
+function get_line_intersection(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y: int64): boolean;
 begin
-        var cat1_x, cat2_x, cat1_y, cat2_y, prod1, prod2: real;
+        var cat1_x, cat2_x, cat1_y, cat2_y, prod1, prod2: int64;
         cat1_x := p1_x - p0_x;
         cat1_y := p1_y - p0_y;
         cat2_x := p3_x - p2_x;
@@ -82,233 +532,6 @@ begin
         Result := true;
 end;
 
-//удаляет элемент del массива fig
-procedure delete2(var fig: figure; el, del: int64);
-begin
-        for var i := del to el - 1 do
-        begin
-                fig[1][i] := fig[1][i + 1];
-                fig[2][i] := fig[2][i + 1];
-        end;
-        fig[1][el] := 0;
-        fig[2][el] := 0;
-end;
-
-//удаляет все заднные элементы fig
-function delete_bad(var fig: figure; el: int64): int64;
-begin
-        for var i := el downto 1 do
-        begin
-                if fig[1][i] = -1 then
-                begin
-                        delete2(fig, el - result, i);
-                        result := result + 1;
-                end;
-        end;
-end;
-
-//удаляет все заданные элементы массива fig, а также элементы массива fig2, стоящие на тех же местах
-function delete_bad2(var fig, fig2: figure; el: int64): int64;
-begin
-        for var i := el downto 1 do
-        begin
-                if fig[1][i] = -1 then
-                begin
-                        delete2(fig, el - result, i);
-                        delete2(fig2, el - result, i);
-                        result := result + 1;
-                end;
-        end;
-end;
-
-//удаляем дубликаты
-function delete_doubles(fig: figure; el: int64): int64;
-begin
-        for var i := 1 to el do///идём по добавляемым вершинам
-        begin
-                for var j := 1 to el do///снова идём по добавляемым вершинам
-                begin
-                        if (Abs(fig[1][i] - fig[1][j]) < 1) and (Abs(fig[2][i] - fig[2][j]) < 1) and not (i = j) then
-                        begin
-                                fig[1][Max(i, j)] := -1;
-                                fig[2][Max(i, j)] := -1;
-                        end;
-                end;
-        end;
-        result := delete_bad(fig, el);//само удаление
-end;
-
-function points_dist(x1, y1, x2, y2: real): real;//расстояние между двумя точками
-begin
-        result := Sqrt(Sqr(x1 - x2) + Sqr(y1 - y2));
-end;
-
-procedure insert(num_insert, len_place: int64; var place_insert: figure);//вставляет len_place-ный элемент массива place_insert в позицию num_insert
-var
-        prom: real;
-begin
-        prom := place_insert[1][num_insert];
-        place_insert[1][num_insert] := place_insert[1][len_place];
-        for var pointup := num_insert + 1 to len_place - 1 do
-        begin
-                place_insert[1][num_insert + len_place - pointup + 1] := place_insert[1][num_insert + len_place - pointup];
-        end;
-        place_insert[1][num_insert + 1] := prom; 
-        prom := place_insert[2][num_insert];
-        place_insert[2][num_insert] := place_insert[2][len_place];
-        for var pointup := num_insert + 1 to len_place - 1 do
-        begin
-                place_insert[2][num_insert + len_place - pointup + 1] := place_insert[2][num_insert + len_place - pointup];
-        end;
-        place_insert[2][num_insert + 1] := prom;
-end;
-
-function Union_figures(var figure1, figure2, union: figure; num_vertex1, num_vertex2: int64): boolean;//объединяет фигуры и кладёт объединение в union (если фигуры не пересекаются выдает false)
-var
-        fig1, fig2, add, place_add: figure;//fig1, fig2 : копии figure1, figure2, add : список вершин, которые нужно добавить как пересечения, place_add : места, куда мы вставляем вершины из add
-//var : array [1.. 100000] of int64;
-var
-        intersections{, delete_old} : array [1..2, 1.. 100000] of boolean;//является ли точка фигуры пересечением
-var
-        num_points, num_add, num_vert1, num_vert2: int64;//num_points : длина массива intersections, num_add : длина массива add
-begin
-        fig1 := figure1;//копируем первую фигуру
-        fig2 := figure2;//копируем вторую фигуру
-        num_vert1 := num_vertex1;
-        num_vert2 := num_vertex2;
-        fig1[1][num_vert1 + 1] := fig1[1][1];//замыкаем фигуры
-        fig2[1][num_vert2 + 1] := fig2[1][1];
-        fig1[2][num_vert1 + 1] := fig1[2][1];
-        fig2[2][num_vert2 + 1] := fig2[2][1];
-        num_points := num_vert1 + num_vert2;//пока просто суммируем кол-ва точек в фигурах
-        {points := fig1;
-        for var i := 1 to num_vert2 do
-        begin
-            points[1][i + num_vert1] := fig2[1][i];
-            points[2][i + num_vert1] := fig2[2][i];
-        end;}
-        //начинаем искать коорднаты пересечений
-        for var i1 := 1 to num_vert1 do//идём по первой фигуре
-        begin
-                for var i2 := 1 to num_vert2 do//идём по второй фигуре
-                begin
-                        var x, y: real;//пересечение линий (которые являются продолжениями сторон)
-                        intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1], x, y);
-                        //проверяем пересекаются ли отрезки
-                        if (get_line_intersection(fig1[1][i1], fig1[2][i1], fig1[1][i1 + 1], fig1[2][i1 + 1], fig2[1][i2], fig2[2][i2], fig2[1][i2 + 1], fig2[2][i2 + 1]) or (points_dist(x, y, fig2[1][i2 + 1], fig2[2][i2 + 1]) < 1) or (points_dist(x, y, fig2[1][i2], fig2[2][i2]) < 1) or (points_dist(x, y, fig1[1][i1 + 1], fig1[2][i1 + 1]) < 1) or (points_dist(x, y, fig1[1][i1], fig1[2][i1]) < 1)) and (x / x = 1) then
-                        begin
-                                add[1][num_add + 1] := x;//заносим пересечение в add
-                                add[2][num_add + 1] := y;
-                                place_add[1][num_add + 1] := i1;//заносим место куда вставить в place_add
-                                place_add[2][num_add + 1] := i2;
-                                num_add := num_add + 1;//увеличиваем кол-во пересечений на 1
-                                //Println(Round(x), Round(y), i1, i2);
-                        end;
-                end;
-        end;
-        if num_add = 0 then
-        begin
-                Result := false;
-                exit;
-        end;
-        Result := true;
-        //удаляем дубликаты
-        for var i := 1 to num_add do///идём по добавляемым вершинам
-        begin
-                for var j := 1 to num_add do///снова идём по добавляемым вершинам
-                begin
-                        if (Abs(add[1][i] - add[1][j]) < 1) and (Abs(add[2][i] - add[2][j]) < 1) and not (i = j) then
-                        begin
-                                add[1][Max(i, j)] := -1;
-                                add[2][Max(i, j)] := -1;
-                        end;
-                end;
-        end;
-        num_add := num_add - delete_bad2(add, place_add, num_add);//само удаление
-        //удаляем те точки, которые не лежат на сторонах фигуры 1
-        for var vert := num_add downto 1 do
-        begin
-                var bad_vert: boolean;//плохая ли вершина
-                bad_vert := true;//до проверки она плохая
-                for var i := 1 to num_vert1 do//идём по вершинам фигуры
-                begin
-                        //и если вершина лежит на какой-то стороне...
-                        if segment_and_pixel(add[1][vert], add[2][vert], fig1[1][i], fig1[1][i + 1], fig1[2][i], fig1[2][i + 1]) then
-                                bad_vert := false;//...она хорошая
-                end;
-                if bad_vert then//если она не хорошая...
-                begin
-                        //SetBrushColor(RGB(150, 90, 0));
-                        //SetPenColor(RGB(150, 90, 0));
-                        //Circle(Round(add[1][vert]), Round(add[2][vert]), 5);
-                        delete2(add, num_add, vert);//...мы её удалим
-                        num_add := num_add - 1;
-                end;
-        end;
-        //тоже для фигуры 2
-        for var vert := num_add downto 1 do
-        begin
-                var bad_vert: boolean;
-                bad_vert := true;
-                for var i := 1 to num_vert2 do
-                begin
-                        if segment_and_pixel(add[1][vert], add[2][vert], fig2[1][i], fig2[1][i + 1], fig2[2][i], fig2[2][i + 1]) then
-                                bad_vert := false;
-                end;
-                if bad_vert then 
-                begin
-                        //SetBrushColor(RGB(150, 0, 0));
-                        //SetPenColor(RGB(150, 0, 0));
-                        //Circle(Round(add[1][vert]), Round(add[2][vert]), 5);
-                        delete2(add, num_add, vert);
-                        num_add := num_add - 1;
-                end;
-        end;
-        {for var i := 1 to num_add do
-        begin
-            fig1[1][num_vert1 + 1] := add[1][i];
-            fig1[2][num_vert1 + 1] := add[2][i];
-            fig2[1][num_vert2 + 1] := add[1][i];
-            fig2[2][num_vert2 + 1] := add[2][i];
-            num_vert1 := num_vert1 + 1;
-            num_vert2 := num_vert2 + 1;
-            insert(fig1)
-        end;}
-        for var i := 1 to num_add do
-        begin
-                SetBrushColor(clBlue);
-                SetPenColor(clBlue);
-                Circle(Round(add[1][i]), Round(add[2][i]), 5);
-        end;
-        Print(num_add);
-end;
-
-procedure Union_of_all_figures(var sort_number_global: number; var sort_intersections_global: global);
-begin
-        var i: int64;
-        var union: figure;
-        i := 1;
-        while(i < l) do
-        begin
-                for var j := i + 1 to l do
-                begin
-                        if(Union_figures(sort_intersections_global[i], sort_intersections_global[j], union, sort_number_global[i], sort_number_global[j])) then
-                        begin
-                                sort_intersections_global[i] := union;
-                                sort_number_global[i] := sort_number_global[i] + sort_number_global[j];
-                                for var k := j to l do
-                                begin
-                                        sort_intersections_global[k] := sort_intersections_global[k + 1];
-                                        sort_number_global[k] := sort_number_global[k + 1];
-                                end;
-                                i -= 1;
-                                break;
-                        end;
-                end;
-                i += 1;
-        end;
-end;
-
 { ************************  векторное пересечение   *******************************************} 
 function vector_multiplicator(vek1_x, vek1_y, vek2_x, vek2_y: int64): int64;
 begin
@@ -319,7 +542,7 @@ end;
 
 procedure MouseDown(x, y, mb: integer);
 begin
-        var intln: boolean;
+        //var strp: string;
         TextOut(0, 0, s + 1);
         s += 1;
         {************************* рисуем охранников **********************************}
@@ -339,42 +562,20 @@ begin
         begin
                 if ((x - 10 <= Gallery[1][1]) and (x + 10 >= Gallery[1][1]) and (y - 10 <= Gallery[2][1]) and (y + 10 >= Gallery[2][1])) then
                 begin
-                        intln := false; 
-                        for var i := 1 to f - 3 do
-                        begin
-                                if get_line_intersection(x, y, Gallery[1][f - 1], Gallery[2][f - 1], Gallery[1][i], Gallery[2][i], Gallery[1][i + 1], Gallery[2][i + 1]) then
-                                begin
-                                        intln := true; 
-                                end;
-                        end;
-                        if not intln then
-                        begin
-                                LineTo(Gallery[1][1], Gallery[2][1]);
-                                Gallery[1][f] := Gallery[1][1];
-                                Gallery[2][f] := Gallery[2][1];
-                                Gallery[1][0] := Gallery[1][f - 1];
-                                Gallery[2][0] := Gallery[2][f - 1];
-                                y_n := 2;
-                        end;
+                        LineTo(Gallery[1][1], Gallery[2][1]);
+                        Gallery[1][f] := Gallery[1][1];
+                        Gallery[2][f] := Gallery[2][1];
+                        Gallery[1][0] := Gallery[1][f - 1];
+                        Gallery[2][0] := Gallery[2][f - 1];
+                        y_n := 2;
                 end
-                else 
+                else
                 begin;
-                        intln := false; 
-                        for var i := 1 to f - 3 do
-                        begin
-                                if get_line_intersection(x, y, Gallery[1][f - 1], Gallery[2][f - 1], Gallery[1][i], Gallery[2][i], Gallery[1][i + 1], Gallery[2][i + 1]) then
-                                begin
-                                        intln := true; 
-                                end;
-                        end;
-                        if not intln then
-                        begin;
-                                LineTo(x, y);
-                                Gallery[1][f] := x;
-                                Gallery[2][f] := y; //strp := IntToStr(x) + ',' + IntToStr(y);
-                                //                        TextOut(x, y+20, strp);
-                                f += 1;
-                        end
+                        LineTo(x, y);
+                        Gallery[1][f] := x;
+                        Gallery[2][f] := y; //strp := IntToStr(x) + ',' + IntToStr(y);
+                        //                        TextOut(x, y+20, strp);
+                        f += 1;
                 end;
         end;
         {**************************** ставим первую точку галереи *****************************}
@@ -393,18 +594,19 @@ begin
         {**************************** начинаем вычислять зону видимости охранников *****************************}
         if (y_n = 2 + kol) then
         begin
-                var intersections_local{точки пересечения со стенками у одного луча}, intersections_zero: figure;
-                var intersections_global{точки пересечения со стенками у всех лучей всех охранников}, sort_intersections_global: global;
+                var intersections_local{точки пересечения со стенками у одного луча}, intersections_zero: array[1..2]of array[1..1000]of real;
+                var intersections_global{точки пересечения со стенками у всех лучей всех охранников}: array[1..1000]of array[1..2]of array[1..1000]of real;
+                var sort_intersections_global: array[1..1000]of polygon777;
+                var intersectionn: polygon777;
                 var number_local: int64;
                 var xp, yp: real;
-                var number_global{ //массив длин элементов массива intersection global (для i-го охранника  - сколько раз все лучи, выходящие из него, пересекают любые стенки)}, sort_number_global: number;
+                var number_global{ //массив длин элементов массива intersection global (для i-го охранника  - сколько раз все лучи, выходящие из него, пересекают любые стенки)}, sort_number_global: array[1..1000]of int64;
                 //sum := 0;
                 number_local := 1;
                 s := 0;
                 for var i := 1 to l - 1 do // идем по всем охранникам
                 begin
                         number_global[i] := 1;  
-                        sort_number_global[i] := 1;
                         for var k := 1 to f - 1 do   // идем по всем вершинам галереи
                         begin
                                 for var j := 1 to f - 1 do // снова идем по всем вершинам галереи
@@ -505,13 +707,13 @@ begin
                                                 //                                                Circle(Round(intersections_global[i][1][k]), Round(intersections_global[i][2][k]), 5);
                                         end
                                 end;
-                                // сортируем  точки внутри стороны
-                                SetPenWidth(3);
-                                {var a: Color;
-                                a := clRandom;
-                                SetBrushColor(a);
-                                SetPenColor(a);}
-                                //Line(Gallery[1][j],Gallery[2][j],Gallery[1][j+1],Gallery[2][j+1]);
+                                                                // сортируем  точки внутри стороны
+                                //                                var a: Color;
+                                //                                a := clRandom;
+                                //                                SetBrushColor(a);
+                                //                                SetPenWidth(3);
+                                //                                SetPenColor(a);
+                                                                //Line(Gallery[1][j],Gallery[2][j],Gallery[1][j+1],Gallery[2][j+1]);
                                 for var p := number_local - 2 downto 1 do
                                 begin
                                         for var o := 1 to p do
@@ -530,22 +732,84 @@ begin
                                         // переносим в трехмерный массив: охранник - xy - вершина в его поле зрения
                                 for var p := 1 to number_local - 1 do
                                 begin
-                                        sort_intersections_global[i][1][sort_number_global[i]] := intersections_local[1][p];
-                                        sort_intersections_global[i][2][sort_number_global[i]] := intersections_local[2][p];
+                                        sort_intersections_global[i][sort_number_global[i]][1] := intersections_local[1][p];
+                                        sort_intersections_global[i][sort_number_global[i]][2] := intersections_local[2][p];
                                         sort_number_global[i] += 1;
                                 end;
-                                sort_intersections_global[i][1][sort_number_global[i]] := sort_intersections_global[i][1][1];
-                                sort_intersections_global[i][2][sort_number_global[i]] := sort_intersections_global[i][2][1];
+                                sort_intersections_global[i][sort_number_global[i]][1] := sort_intersections_global[i][1][1];
+                                sort_intersections_global[i][sort_number_global[i]][2] := sort_intersections_global[i][1][2];
                                 //sort_number_global[i] += 1;
                                 intersections_local := intersections_zero;
                                 number_local := 1;
                         end;
                 end;
-                //                for var i := 1 to 67 do
-                //                begin
-                //                    a[i] := clRandom;
-                //                end;
-                                //                for var i := 1 to l - 1 do // идем по охранникам
+                var tf: boolean;
+                var size_of_sig, i, sss: int64;
+                size_of_sig := l;
+                i := 1;
+                SetPenColor(clGreen);
+                SetPenWidth(4);
+                for var j := 1 to size_of_sig - 1 do
+                begin
+                        for var k := 0 to sort_number_global[j] - 2 do
+                        begin
+                                Line(Round(sort_intersections_global[j][k][1]), Round(sort_intersections_global[j][k][2]), Round(sort_intersections_global[j][k + 1][1]), Round(sort_intersections_global[j][k + 1][2]));
+                        end;
+                        Line(Round(sort_intersections_global[j][0][1]), Round(sort_intersections_global[j][0][2]), Round(sort_intersections_global[j][sort_number_global[j] - 1][1]), Round(sort_intersections_global[j][sort_number_global[j] - 1][2]));
+                end;
+                while (i < size_of_sig) do
+                begin
+                        Print(i);
+                        for var j := 1 to size_of_sig - 1 do
+                        begin
+                                if (j <> i) then
+                                begin
+                                        Print(3);
+                                        tf := PolygonUnion(sort_intersections_global[i], sort_intersections_global[j], intersectionn, sort_number_global[i], sort_number_global[j], sss);
+                                        Print(4);
+                                        if (tf) then
+                                        begin
+                                                if (j > i) then
+                                                begin
+                                                        sort_intersections_global[i] := intersectionn;
+                                                        sort_number_global[i] := sss;
+                                                        for var k := j to size_of_sig - 1 do
+                                                        begin
+                                                                sort_intersections_global[k] := sort_intersections_global[k + 1];
+                                                                sort_number_global[k] := sort_number_global[k + 1];
+                                                        end;
+                                                        size_of_sig -= 1;
+                                                end
+                                                else
+                                                begin
+                                                        sort_intersections_global[i] := intersectionn;
+                                                        sort_number_global[i] := sss;
+                                                        for var k := j to size_of_sig - 1 do
+                                                        begin
+                                                                sort_intersections_global[k] := sort_intersections_global[k + 1];
+                                                                sort_number_global[k] := sort_number_global[k + 1];
+                                                        end;
+                                                        size_of_sig -= 1;
+                                                        i -= 1;
+                                                end
+                                        end;
+                                end;
+                        end;
+                        Print(22);
+                        i += 1;
+                end;
+                Print(111);
+                SetPenColor(clRed);
+                SetPenWidth(4);
+                for var j := 1 to size_of_sig - 1 do
+                begin
+                        for var k := 0 to sort_number_global[j] - 2 do
+                        begin
+                                Line(Round(sort_intersections_global[j][k][1]), Round(sort_intersections_global[j][k][2]), Round(sort_intersections_global[j][k + 1][1]), Round(sort_intersections_global[j][k + 1][2]));
+                        end;
+                        Line(Round(sort_intersections_global[j][0][1]), Round(sort_intersections_global[j][0][2]), Round(sort_intersections_global[j][sort_number_global[j] - 1][1]), Round(sort_intersections_global[j][sort_number_global[j] - 1][2]));
+                end;
+                //                for var i := 1 to l - 1 do // идем по охранникам
                 //                begin
                 //                        //                        SetBrushColor(a[i]);
                 //                        //                        SetPenColor(a[i]);
@@ -573,60 +837,23 @@ begin
                 //                        zzzz := 0;
                 //                        //Print(sort_intersections_global[1],sort_number_global);
                 //                end;
-                for var g := 7 to 7 * l - 1 do//7 раз идём по охранникам
-                begin
-                        for var i := 1 to sort_number_global[g div 7] - 2 do//идём по вершинам заново
-                        begin
-                                //если 3 точки лежат на одной прямой, то отмечаем их для delete_bad
-                                if segment_and_pixel(sort_intersections_global[g div 7][1][i + 1], sort_intersections_global[g div 7][2][i + 1], sort_intersections_global[g div 7][1][i], sort_intersections_global[g div 7][1][i + 2], sort_intersections_global[g div 7][2][i], sort_intersections_global[g div 7][2][i + 2]) then
-                                begin
-                                        //SetBrushColor(clRed);
-                                        //Circle(Round(sort_intersections_global[g div 7][1][i + 1]), Round(sort_intersections_global[g div 7][2][i + 1]), 5);
-                                        sort_intersections_global[g div 7][1][i + 1] := -1;
-                                        sort_intersections_global[g div 7][2][i + 1] := -1;
-                                end;    
-                        end;
-                        //обходим эффкт круга
-                        if segment_and_pixel(sort_intersections_global[g div 7][1][sort_number_global[g div 7]], sort_intersections_global[g div 7][2][sort_number_global[g div 7]], sort_intersections_global[g div 7][1][sort_number_global[g div 7] - 1], sort_intersections_global[g div 7][1][1], sort_intersections_global[g div 7][2][sort_number_global[g div 7] - 1], sort_intersections_global[g div 7][2][1]) then
-                        begin
-                                //SetBrushColor(clRed);
-                                //Circle(Round(sort_intersections_global[g div 7][1][sort_number_global[g div 7]]), Round(sort_intersections_global[g div 7][2][sort_number_global[g div 7]]), 5);
-                                sort_intersections_global[g div 7][1][sort_number_global[g div 7]] := -1;
-                                sort_intersections_global[g div 7][2][sort_number_global[g div 7]] := -1;
-                        end;
-                        //обходим эффкт круга
-                        if segment_and_pixel(sort_intersections_global[g div 7][1][1], sort_intersections_global[g div 7][2][1], sort_intersections_global[g div 7][1][sort_number_global[g div 7]], sort_intersections_global[g div 7][1][2], sort_intersections_global[g div 7][2][sort_number_global[g div 7]], sort_intersections_global[g div 7][2][2]) then
-                        begin
-                                sort_intersections_global[g div 7][1][1] := -1;
-                                sort_intersections_global[g div 7][2][1] := -1;
-                        end;
-                        sort_number_global[g div 7] := sort_number_global[g div 7] - delete_bad(sort_intersections_global[g div 7], sort_number_global[g div 7] + 1);//удаляем отмеченые нами ранее вершины
-                end;
-                for var g := 1 to l - 1 do
-                        sort_number_global[g] := sort_number_global[g] - delete_doubles(sort_intersections_global[g], sort_number_global[g]);
-                for var i := 1 to l - 1 do // идем по охранникам
-                begin
-                        SetBrushColor(ARGB(0, 0, 0, 0));
-                        TextOut(Guards[1][i] + 3, Guards[2][i], i);
-                        SetBrushColor(a[i]);
-                        SetPenColor(a[i]);
-                        circle(Guards[1][i], Guards[2][i], 10);
-                        for var j := 1 to sort_number_global[i] - 1 do//идём по узлам охранников
-                        begin
-                                //Println(i, j, sort_intersections_global[i][1][j], sort_intersections_global[i][2][j]); // здесь лежат все точки,которые видят все охранники
-                                //соединяем все узлы охранника
-                                SetBrushColor(ARGB(0, 0, 0, 0));
-                                Line(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), Round(sort_intersections_global[i][1][j + 1]), Round(sort_intersections_global[i][2][j + 1]));
-                                Circle(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), 5);
-                                TextOut(Round(sort_intersections_global[i][1][j]) + 3, round(sort_intersections_global[i][2][j]), j);
-                                {Print(sort_intersections_global[i][1][j]);
-                                Print(sort_intersections_global[i][2][j]);}
-                        end;
-                        Line(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), Round(sort_intersections_global[i][1][1]), Round(sort_intersections_global[i][2][1]));
-                        Circle(Round(sort_intersections_global[i][1][sort_number_global[i]]), Round(sort_intersections_global[i][2][sort_number_global[i]]), 5);
-                        TextOut(Round(sort_intersections_global[i][1][sort_number_global[i]]) + 3, round(sort_intersections_global[i][2][sort_number_global[i]]), sort_number_global[i]);
-                end;
-                Union_of_all_figures(sort_number_global,sort_intersections_global);
+                //                for var i := 1 to l - 1 do // идем по охранникам
+                //                begin
+                //                        //                        SetBrushColor(ARGB(0, 0, 0, 0));
+                //                        //                        TextOut(Guards[1][i] + 3, Guards[2][i], i);
+                //                        SetBrushColor(clRandom);
+                //                        SetPenColor(clRandom);
+                //                        circle(Guards[1][i], Guards[2][i], 10);
+                //                        for var j := 1 to sort_number_global[i] - 1 do//идём по узлам охранников
+                //                        begin
+                //                                //Println(i, j, sort_intersections_global[i][1][j], sort_intersections_global[i][2][j]); // здесь лежат все точки,которые видят все охранники
+                //                                //соединяем все узлы охранника
+                //                                Line(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), Round(sort_intersections_global[i][1][j + 1]), Round(sort_intersections_global[i][2][j + 1]));
+                //                                Circle(Round(sort_intersections_global[i][1][j]), Round(sort_intersections_global[i][2][j]), 5);
+                //                                SetBrushColor(ARGB(0, 0, 0, 0));
+                //                                TextOut(Round(sort_intersections_global[i][1][j]) + 3, round(sort_intersections_global[i][2][j]), j);
+                //                        end;
+                //                end;
                 //                var xxx, yyy: real;
                 //                for var i := 1 to l - 1 do
                 //                begin
@@ -706,29 +933,40 @@ begin
 end;
 
 begin
-                {var a1, a2, a3, a4, a5, a6, a7, a8: int64;
-                var x, y: real;
-                        a1 := Random(1, 800);
-                        a2 := Random(1, 800);
-                        a3 := Random(1, 800);
-                        a4 := Random(1, 800);
-                        a5 := Random(1, 800);
-                        a6 := Random(1, 800);
-                        a7 := Random(1, 800);
-                        a8 := Random(1, 800);
-                        Line(5, 7 , 50, 300);
-                        Line(1, 9, 100, 200);
-                        intersection(0, 0, 1, 1, 1, 1, 2, 2, x, y);
-                        Print(x,y);
-                        Circle(Round(x),Round(y),5);
-                        Print(x,y);
-                        intersection(1, 1, 5, 5, 0, 0, 10, 10, x, y);
-                        Print(x,y);
-                        Circle(Round(x), Round(y), 10);
-                                                Print(x,y,x/x);
-                                                if ((x/x)<>1)then Print(1);
-                        Circle(Round(x), Round(y),5);
-                        Print(get_line_intersection(Round(x), Round(y), Round(x),Round(y), 1, 9, 100, 200));}
+//     var rrr:polygon777;
+//     rrr[0][1] := 1;
+//     rrr[0][2] := 1;
+//     rrr[1][1] := 500;
+//     rrr[1][2] := 1;
+//     rrr[2][1] := 500;
+//     rrr[2][2] := 500;
+//     rrr[3][1] := 1;
+//     rrr[3][2] :=500;
+//      Print(IsPointInPolygon2(rrr, 0, 0, 4));
+                //var a1, a2, a3, a4, a5, a6, a7, a8: int64;
+        //        var x, y: real;
+                        //a1 := Random(1, 800);
+                        //a2 := Random(1, 800);
+                        //a3 := Random(1, 800);
+                        //a4 := Random(1, 800);
+                        //a5 := Random(1, 800);
+                        //a6 := Random(1, 800);
+                        //a7 := Random(1, 800);
+                        //a8 := Random(1, 800);
+        //                Line(5, 7 , 50, 300);
+        //                Line(1, 9, 100, 200);
+        //                intersection(0, 0, 1, 1, 1, 1, 2, 2, x, y);
+        //                Print(x,y);
+        //                Circle(Round(x),Round(y),5);
+                        //Print(x,y);
+                        //intersection(1, 1, 5, 5, 0, 0, 10, 10, x, y);
+                        //Print(x,y);
+                        //Circle(Round(x), Round(y), 10);
+                        //                        Print(x,y,x/x);
+                        //                        if ((x/x)<>1)then Print(1);
+        //                Circle(Round(x), Round(y),5);
+        //                Print(get_line_intersection(Round(x), Round(y), Round(x),Round(y), 1, 9, 100, 200));
+                                                //  print(WindowHeight,WindowWidth)
         Read(kol); // читаем количество охранников
         OnMouseDown := MouseDown; // запускаем основную процедуру
         MaximizeWindow();
